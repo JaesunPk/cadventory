@@ -16,6 +16,7 @@
 #include <QVBoxLayout>
 #include <cmath>
 #include <iostream>
+#include <sstream>
 #include <string>
 
 #include "config.h"
@@ -24,9 +25,9 @@
 ReportGenerationWindow::ReportGenerationWindow(QWidget* parent, Model* model,
                                                Library* library)
     : QWidget(parent),
-      model(model),
-      library(library),
       num_file(0),
+      library(library),
+      model(model),
       ui(new Ui::ReportGenerationWindow),
       title("3D Model Inventory Report"),
       username("username"),
