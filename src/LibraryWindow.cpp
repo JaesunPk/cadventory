@@ -35,9 +35,10 @@ LibraryWindow::LibraryWindow(QWidget* parent)
     model(nullptr),
     availableModelsProxyModel(new ModelFilterProxyModel(this)),
     selectedModelsProxyModel(new ModelFilterProxyModel(this)),
+    modelCardDelegate(new ModelCardDelegate(this)),
     indexingThread(nullptr),
-    indexingWorker(nullptr),
-    modelCardDelegate(new ModelCardDelegate(this)) {
+    indexingWorker(nullptr)
+{
     ui.setupUi(this);
 }
 
@@ -380,7 +381,7 @@ void LibraryWindow::onProgressUpdated(const QString& currentObject, int percenta
     }
 }
 
-void LibraryWindow::onInclusionChanged(const QModelIndex& index, bool included) {
+void LibraryWindow::onInclusionChanged(const QModelIndex& index, bool /*included*/) {
     Q_UNUSED(index);
     availableModelsProxyModel->invalidate();
     selectedModelsProxyModel->invalidate();
@@ -406,7 +407,7 @@ void LibraryWindow::onIndexingComplete() {
                                  {Qt::CheckStateRole});
 }
 
-void LibraryWindow::onDirectoryLoaded(const QString& path) {
+void LibraryWindow::onDirectoryLoaded(const QString& /*path*/) {
     fileSystemProxyModel->invalidate();
     ui.fileSystemTreeView->expandAll();
 }

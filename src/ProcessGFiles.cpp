@@ -412,7 +412,6 @@ std::tuple<bool, std::string, std::string> ProcessGFiles::generateGistReport(con
 {
     std::string gistCommand;
     std::string errorMessage;
-    bool success = true;
 
     qDebug() << "[ProcessGFiles::generateGistReport] Started for inputFilePath:" << QString::fromStdString(inputFilePath)
              << ", outputFilePath:" << QString::fromStdString(outputFilePath)

@@ -6,7 +6,12 @@
 namespace fs = std::filesystem;
 
 ReportGeneratorWorker::ReportGeneratorWorker(Model* model, std::string output_directory, std::string label, QObject* parent)
-    : QObject(parent), output_directory(output_directory), label(label), model(model){}
+    : QObject(parent),
+      label(label),
+      output_directory(output_directory),
+      model(model)
+{
+}
 
 void ReportGeneratorWorker::process() {
   qDebug() << "ReportGeneratorWorker::process() started";

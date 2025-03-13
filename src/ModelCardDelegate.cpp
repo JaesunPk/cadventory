@@ -76,9 +76,6 @@ bool ModelCardDelegate::editorEvent(QEvent* event, QAbstractItemModel* model,
         QMouseEvent* mouseEvent = static_cast<QMouseEvent*>(event);
         QPoint pos = mouseEvent->pos();
 
-        QRect itemRect = option.rect;
-        QPoint itemPos = pos - itemRect.topLeft();
-
         if (iconRect(option).contains(pos)) {
             int modelId = index.data(Model::IdRole).toInt();
             emit modelViewClicked(modelId);

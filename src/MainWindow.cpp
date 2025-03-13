@@ -320,7 +320,7 @@ void MainWindow::resetting()
         std::remove_if(
             libraries.begin(),
             libraries.end(),
-            [](Library* lib) {
+            [](Library*) {
                 return true;  // Remove all
             }),
         libraries.end()
@@ -377,7 +377,6 @@ void MainWindow::removeLibrary()
             QLayoutItem* item = ui.gridLayout->itemAt(i);
 
             QPushButton* button = qobject_cast<QPushButton*>(item->widget());
-            const size_t LAYOUT_SHIFT = 20;
             const size_t COLUMNS = 5;
             int row = i / COLUMNS;
             int column = i % COLUMNS;
