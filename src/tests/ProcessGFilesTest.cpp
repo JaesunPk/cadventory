@@ -49,7 +49,6 @@ TEST_CASE("ProcessGFiles - Initialization", "[ProcessGFiles]") {
     ProcessGFiles processor(model.get());
 
     REQUIRE(model != nullptr);
-    REQUIRE(&processor != nullptr);
 
     cleanupTestLibraryPath();
 }
