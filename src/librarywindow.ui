@@ -6,229 +6,258 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>640</width>
-    <height>480</height>
+    <width>876</width>
+    <height>560</height>
    </rect>
   </property>
-  <property name="minimumSize">
-   <size>
-    <width>640</width>
-    <height>480</height>
-   </size>
-  </property>
-  <property name="maximumSize">
-   <size>
-    <width>640</width>
-    <height>480</height>
-   </size>
+  <property name="sizePolicy">
+   <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+    <horstretch>0</horstretch>
+    <verstretch>0</verstretch>
+   </sizepolicy>
   </property>
   <property name="windowTitle">
    <string>Library</string>
   </property>
-  <widget class="QGroupBox" name="groupBox">
-   <property name="geometry">
-    <rect>
-     <x>10</x>
-     <y>50</y>
-     <width>261</width>
-     <height>421</height>
-    </rect>
+  <layout class="QVBoxLayout" name="verticalLayout">
+   <property name="leftMargin">
+    <number>6</number>
    </property>
-   <property name="title">
-    <string>Models</string>
+   <property name="rightMargin">
+    <number>6</number>
    </property>
-   <property name="flat">
-    <bool>false</bool>
+   <property name="bottomMargin">
+    <number>6</number>
    </property>
-   <widget class="QListWidget" name="listWidget">
-    <property name="geometry">
-     <rect>
-      <x>0</x>
-      <y>20</y>
-      <width>261</width>
-      <height>371</height>
-     </rect>
-    </property>
-    <item>
-     <property name="text">
-      <string>.</string>
+   <item>
+    <widget class="QTabWidget" name="tabWidget">
+     <property name="currentIndex">
+      <number>0</number>
      </property>
-    </item>
-   </widget>
-   <widget class="QPushButton" name="generateReport">
-    <property name="enabled">
-     <bool>false</bool>
-    </property>
-    <property name="geometry">
-     <rect>
-      <x>0</x>
-      <y>390</y>
-      <width>261</width>
-      <height>32</height>
-     </rect>
-    </property>
-    <property name="text">
-     <string>Generate Report</string>
-    </property>
-   </widget>
-  </widget>
-  <widget class="QTabWidget" name="tabWidget">
-   <property name="geometry">
-    <rect>
-     <x>270</x>
-     <y>59</y>
-     <width>361</width>
-     <height>412</height>
-    </rect>
-   </property>
-   <property name="tabShape">
-    <enum>QTabWidget::Triangular</enum>
-   </property>
-   <property name="currentIndex">
-    <number>0</number>
-   </property>
-   <property name="elideMode">
-    <enum>Qt::ElideMiddle</enum>
-   </property>
-   <widget class="QWidget" name="geometryTab">
-    <attribute name="title">
-     <string>Geometry</string>
-    </attribute>
-    <widget class="QListView" name="geometryListView">
-     <property name="geometry">
-      <rect>
-       <x>0</x>
-       <y>0</y>
-       <width>351</width>
-       <height>381</height>
-      </rect>
-     </property>
-    </widget>
-   </widget>
-   <widget class="QWidget" name="imagesTab">
-    <attribute name="title">
-     <string>Images</string>
-    </attribute>
-    <widget class="QListView" name="imagesListView">
-     <property name="geometry">
-      <rect>
-       <x>0</x>
-       <y>0</y>
-       <width>351</width>
-       <height>381</height>
-      </rect>
-     </property>
-    </widget>
-   </widget>
-   <widget class="QWidget" name="documentsTab">
-    <attribute name="title">
-     <string>Documents</string>
-    </attribute>
-    <widget class="QListView" name="documentsListView">
-     <property name="geometry">
-      <rect>
-       <x>0</x>
-       <y>0</y>
-       <width>351</width>
-       <height>381</height>
-      </rect>
-     </property>
-    </widget>
-   </widget>
-   <widget class="QWidget" name="dataTab">
-    <attribute name="title">
-     <string>Data</string>
-    </attribute>
-    <widget class="QListView" name="dataListView">
-     <property name="geometry">
-      <rect>
-       <x>0</x>
-       <y>0</y>
-       <width>351</width>
-       <height>381</height>
-      </rect>
-     </property>
-    </widget>
-   </widget>
-  </widget>
-  <widget class="QWidget" name="leftLayoutWidget">
-   <property name="geometry">
-    <rect>
-     <x>10</x>
-     <y>10</y>
-     <width>251</width>
-     <height>34</height>
-    </rect>
-   </property>
-   <layout class="QHBoxLayout" name="leftHorizontalLayout">
-    <item>
-     <widget class="QPushButton" name="allLibraries">
-      <property name="text">
-       <string>All Libraries</string>
-      </property>
-      <property name="flat">
-       <bool>true</bool>
-      </property>
-     </widget>
-    </item>
-    <item>
-     <widget class="QLabel" name="label">
-      <property name="text">
-       <string>&lt;</string>
-      </property>
-      <property name="alignment">
-       <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
-      </property>
-     </widget>
-    </item>
-    <item>
-     <widget class="QLabel" name="currentLibrary">
-      <property name="font">
-       <font>
-        <bold>true</bold>
-       </font>
-      </property>
-      <property name="text">
-       <string>Current Library</string>
-      </property>
-     </widget>
-    </item>
-   </layout>
-  </widget>
-  <widget class="QWidget" name="rightLayoutWidget">
-   <property name="geometry">
-    <rect>
-     <x>299</x>
-     <y>10</y>
-     <width>331</width>
-     <height>32</height>
-    </rect>
-   </property>
-   <layout class="QHBoxLayout" name="rightHorizontalLayout">
-    <item>
-     <widget class="QComboBox" name="searchDropDown">
-      <property name="enabled">
-       <bool>false</bool>
-      </property>
-      <item>
-       <property name="text">
-        <string>Search Entire Library</string>
+     <widget class="QWidget" name="libraryTab">
+      <attribute name="title">
+       <string>Library View</string>
+      </attribute>
+      <layout class="QHBoxLayout" name="horizontalLayout">
+       <property name="leftMargin">
+        <number>0</number>
        </property>
-      </item>
+       <property name="rightMargin">
+        <number>0</number>
+       </property>
+       <property name="bottomMargin">
+        <number>0</number>
+       </property>
+       <item>
+        <layout class="QVBoxLayout" name="selectedModelsLayout">
+         <item>
+          <layout class="QHBoxLayout" name="horizontalLayout_3">
+           <item>
+            <widget class="QPushButton" name="backButton">
+             <property name="text">
+              <string>back</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QLabel" name="currentLibrary">
+             <property name="text">
+              <string>Library</string>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </item>
+         <item>
+          <layout class="QHBoxLayout" name="horizontalLayout_4"/>
+         </item>
+         <item>
+          <widget class="QLabel" name="label">
+           <property name="text">
+            <string>Selected Models</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QListView" name="selectedModelsView">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+             <horstretch>0</horstretch>
+             <verstretch>1</verstretch>
+            </sizepolicy>
+           </property>
+           <property name="resizeMode">
+            <enum>QListView::ResizeMode::Adjust</enum>
+           </property>
+           <property name="spacing">
+            <number>15</number>
+           </property>
+           <property name="gridSize">
+            <size>
+             <width>220</width>
+             <height>140</height>
+            </size>
+           </property>
+           <property name="viewMode">
+            <enum>QListView::ViewMode::IconMode</enum>
+           </property>
+           <property name="uniformItemSizes">
+            <bool>true</bool>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QPushButton" name="generateReportButton">
+           <property name="text">
+            <string>Generate Report</string>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </item>
+       <item>
+        <layout class="QVBoxLayout" name="availableModelsLayout">
+         <item>
+          <widget class="QLabel" name="label_2">
+           <property name="text">
+            <string>Available Models</string>
+           </property>
+           <property name="textFormat">
+            <enum>Qt::TextFormat::PlainText</enum>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <layout class="QHBoxLayout" name="searchLayout">
+           <item>
+            <widget class="QComboBox" name="searchFieldComboBox">
+             <item>
+              <property name="text">
+               <string>Short Name</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>Title</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>Author</string>
+              </property>
+             </item>
+            </widget>
+           </item>
+           <item>
+            <widget class="QLineEdit" name="searchLineEdit">
+             <property name="placeholderText">
+              <string>Search...</string>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </item>
+         <item>
+          <widget class="QListView" name="availableModelsView">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+             <horstretch>0</horstretch>
+             <verstretch>1</verstretch>
+            </sizepolicy>
+           </property>
+           <property name="resizeMode">
+            <enum>QListView::ResizeMode::Adjust</enum>
+           </property>
+           <property name="spacing">
+            <number>15</number>
+           </property>
+           <property name="gridSize">
+            <size>
+             <width>220</width>
+             <height>140</height>
+            </size>
+           </property>
+           <property name="viewMode">
+            <enum>QListView::ViewMode::IconMode</enum>
+           </property>
+           <property name="uniformItemSizes">
+            <bool>true</bool>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <layout class="QHBoxLayout" name="progressLayout">
+           <item>
+            <spacer name="horizontalSpacer">
+             <property name="orientation">
+              <enum>Qt::Orientation::Horizontal</enum>
+             </property>
+             <property name="sizeType">
+              <enum>QSizePolicy::Policy::Expanding</enum>
+             </property>
+             <property name="sizeHint" stdset="0">
+              <size>
+               <width>0</width>
+               <height>0</height>
+              </size>
+             </property>
+            </spacer>
+           </item>
+           <item>
+            <widget class="QLabel" name="statusLabel">
+             <property name="text">
+              <string>Processing:</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QProgressBar" name="progressBar">
+             <property name="minimum">
+              <number>0</number>
+             </property>
+             <property name="maximum">
+              <number>100</number>
+             </property>
+             <property name="value">
+              <number>0</number>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </item>
+        </layout>
+       </item>
+      </layout>
      </widget>
-    </item>
-    <item>
-     <widget class="QLineEdit" name="searchInput">
-      <property name="enabled">
-       <bool>false</bool>
-      </property>
-      <property name="text">
-       <string>Search Not Available</string>
-      </property>
+     <widget class="QWidget" name="filesystemTab">
+      <attribute name="title">
+       <string>Filesystem View</string>
+      </attribute>
+      <layout class="QHBoxLayout" name="filesystemLayout">
+       <property name="leftMargin">
+        <number>0</number>
+       </property>
+       <property name="rightMargin">
+        <number>0</number>
+       </property>
+       <property name="bottomMargin">
+        <number>0</number>
+       </property>
+       <item>
+        <widget class="QTreeView" name="fileSystemTreeView">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+           <horstretch>1</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+        </widget>
+       </item>
+      </layout>
      </widget>
-    </item>
-   </layout>
-  </widget>
+    </widget>
+   </item>
+  </layout>
  </widget>
  <resources/>
  <connections/>
