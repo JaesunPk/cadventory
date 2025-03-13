@@ -1,10 +1,14 @@
 #include "ModelFilterProxyModel.h"
 #include "Model.h"
 #include <QRegularExpression>
+#include <QVariant>
+#include <QMetaType>
+
 
 ModelFilterProxyModel::ModelFilterProxyModel(QObject* parent)
     : QSortFilterProxyModel(parent) {
 }
+
 
 bool ModelFilterProxyModel::filterAcceptsRow(int sourceRow, const QModelIndex& sourceParent) const {
     QModelIndex index = sourceModel()->index(sourceRow, 0, sourceParent);
@@ -25,7 +29,7 @@ bool ModelFilterProxyModel::filterAcceptsRow(int sourceRow, const QModelIndex& s
     QVariant data = sourceModel()->data(index, filterRole());
     QString dataString;
 
-    if (data.type() == QVariant::Bool) {
+    if (data.typeId() == QMetaType::Bool) {
         dataString = data.toBool() ? "1" : "0";
     } else {
         dataString = data.toString();
