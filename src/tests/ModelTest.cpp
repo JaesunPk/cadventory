@@ -474,9 +474,9 @@ TEST_CASE("Model: Get Included Models", "[Model]") {
     Model model(testDir);
 
     // Insert sample models into the database
-    ModelData model1 = {0, "IncludedModel1", "./file1", "{}", "Title1", {}, "Author1", "/path1", "Library1", false, false, true};
-    ModelData model2 = {0, "ExcludedModel", "./file2", "{}", "Title2", {}, "Author2", "/path2", "Library2", false, false, false};
-    ModelData model3 = {0, "IncludedModel2", "./file3", "{}", "Title3", {}, "Author3", "/path3", "Library3", false, false, true};
+    ModelData model1 = {0, "IncludedModel1", "./file1", "{}", "Title1", {}, "Author1", "/path1", "Library1", false, false, true, {}};
+    ModelData model2 = {0, "ExcludedModel", "./file2", "{}", "Title2", {}, "Author2", "/path2", "Library2", false, false, false, {}};
+    ModelData model3 = {0, "IncludedModel2", "./file3", "{}", "Title3", {}, "Author3", "/path3", "Library3", false, false, true, {}};
     REQUIRE(model.insertModel(model1));
     REQUIRE(model.insertModel(model2));
     REQUIRE(model.insertModel(model3));
@@ -511,7 +511,7 @@ TEST_CASE("Model: Is File Included", "[Model]") {
     Model model(testDir);
 
     // Insert a sample model into the database
-    ModelData modelData = {0, "IncludedFileModel", "./file_path", "{}", "Title", {}, "Author", "/path", "Library", false, false, true};
+    ModelData modelData = {0, "IncludedFileModel", "./file_path", "{}", "Title", {}, "Author", "/path", "Library", false, false, true, {}};
     REQUIRE(model.insertModel(modelData));
 
     // Verify that a file is correctly identified as "included"
@@ -539,9 +539,9 @@ TEST_CASE("Model: Get Included Not Processed Models", "[Model]") {
     Model model(testDir);
 
     // Insert sample models into the database
-    ModelData model1 = {0, "IncludedNotProcessed1", "./file1", "{}", "Title1", {}, "Author1", "/path1", "Library1", false, false, true};
-    ModelData model2 = {0, "IncludedProcessed", "./file2", "{}", "Title2", {}, "Author2", "/path2", "Library2", false, true, true};
-    ModelData model3 = {0, "ExcludedNotProcessed", "./file3", "{}", "Title3", {}, "Author3", "/path3", "Library3", false, false, false};
+    ModelData model1 = {0, "IncludedNotProcessed1", "./file1", "{}", "Title1", {}, "Author1", "/path1", "Library1", false, false, true, {}};
+    ModelData model2 = {0, "IncludedProcessed", "./file2", "{}", "Title2", {}, "Author2", "/path2", "Library2", false, true, true, {}};
+    ModelData model3 = {0, "ExcludedNotProcessed", "./file3", "{}", "Title3", {}, "Author3", "/path3", "Library3", false, false, false, {}};
     REQUIRE(model.insertModel(model1));
     REQUIRE(model.insertModel(model2));
     REQUIRE(model.insertModel(model3));
