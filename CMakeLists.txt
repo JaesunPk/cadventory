@@ -135,9 +135,15 @@ else()
 endif()
 
 # Find the BRL-CAD executables
-set(MGED_EXECUTABLE "${BRLCAD_ROOT}/bin/mged")
-set(RT_EXECUTABLE "${BRLCAD_ROOT}/bin/rt")
-set(GIST_EXECUTABLE "${BRLCAD_ROOT}/bin/gist")
+if(WIN32)
+  set(MGED_EXECUTABLE "${BRLCAD_ROOT}/bin/mged.exe")
+  set(RT_EXECUTABLE "${BRLCAD_ROOT}/bin/rt.exe")
+  set(GIST_EXECUTABLE "${BRLCAD_ROOT}/bin/gist.exe")
+else(WIN32)
+  set(MGED_EXECUTABLE "${BRLCAD_ROOT}/bin/mged")
+  set(RT_EXECUTABLE "${BRLCAD_ROOT}/bin/rt")
+  set(GIST_EXECUTABLE "${BRLCAD_ROOT}/bin/gist")
+endif(WIN32)
 
 if(NOT EXISTS "${MGED_EXECUTABLE}" OR NOT EXISTS "${RT_EXECUTABLE}" OR NOT EXISTS "${GIST_EXECUTABLE}")
   message(FATAL_ERROR "Could not find BRL-CAD executables. Please ensure BRLCAD_ROOT is set correctly.")
