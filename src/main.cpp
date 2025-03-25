@@ -40,7 +40,7 @@ main(int argc, char **argv)
       homestr = ".";
     app.processEvents();
     std::string localDir = std::string(home);
-    app.indexDirectory(localDir.c_str());
+    app.indexDirectory(localDir.c_str()); 
   });
   printf("Starting CADventory\n");
 
