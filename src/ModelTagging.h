@@ -21,14 +21,12 @@ public:
 
     ~ModelTagging();
 
-    void generateTags(std::string filepath);
-    std::vector<std::string> getTags();
+    std::vector<std::string> generateTags(std::string filepath);
 
 private:
     bool checkOllamaAvailability();
     bool checkModelAvailability(const std::string& modelName);
     std::string modelName = "llama3"; // default model name - change if needed
-    std::vector<std::string> tags;
     ModelParser parser;
 };
 

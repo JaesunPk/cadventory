@@ -5,6 +5,7 @@
 #include <QMainWindow>
 #include <QSplashScreen>
 #include <QObject>
+#include "ModelTagging.h"
 
 
 class CADventory : public QApplication
@@ -19,10 +20,13 @@ public:
 
   void indexDirectory(const char *path);
 
+  ModelTagging* getModelTagging() { return modelTagging; }
+
 signals:
   void indexingComplete(const char *summary);
 
 private:
+  ModelTagging* modelTagging;
   void initMainWindow();
 
 public:

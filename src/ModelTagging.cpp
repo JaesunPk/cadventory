@@ -42,17 +42,19 @@ ModelTagging::~ModelTagging(){
     // destructor implementation
 }
 
-void ModelTagging::generateTags(std::string filepath) {
+std::vector<std::string> ModelTagging::generateTags(std::string filepath) {
+    std::vector<std::string> tags = {};
+
     // check if ollama is available
     if(!checkOllamaAvailability()){
         std::cerr << "ERROR: Ollama is not available." << std::endl;
-        return;
+        return tags;
     }
 
     // check if the model is available
     if(!checkModelAvailability(this->modelName)){
         std::cerr << "ERROR: Model " << this->modelName << " is not available." << std::endl;
-        return;
+        return tags;
     }
 
     ModelMetadata metadata = parser.parseModel(filepath);
@@ -166,8 +168,10 @@ void ModelTagging::generateTags(std::string filepath) {
     else {
         std::cerr << "ERROR: LLaMA call failed." << std::endl;
     }
-}
 
-std::vector<std::string> ModelTagging::getTags() {
-    return tags;
+	// Remove the temp files
+	std::remove("prompt.txt");
+	std::remove("temp_tags.txt");
+
+	return tags;
 }
