@@ -65,15 +65,18 @@ FilesystemIndexer::indexDirectory(const std::string& dir, long depth) {
         if (std::filesystem::is_directory(entry.status())) {
           // recurse if we've not reached our depth limit
           if (depth < 0 || depth > 1) {
-            count += indexDirectory(entry.path().string(), depth - 1);
+            count += indexDirectory(entry.path().u8string(), depth - 1);
           }
         } else if (std::filesystem::is_regular_file(entry.status())) {
           auto suffix = entry.path().extension().string();
-          fileIndex[suffix].push_back(entry.path().string());
+
+          auto wpath = entry.path().u8string();
+
+          fileIndex[suffix].push_back(wpath);
           count++;
 
           if (callback)
-            callback(std::string("Indexing ") + entry.path().string());
+            callback(std::string("Indexing ") + entry.path().u8string());
         }
       } catch (const std::filesystem::filesystem_error& e) {
         std::cerr << "WARNING: Unable to access " << entry.path() << " - " << e.what() << std::endl;
