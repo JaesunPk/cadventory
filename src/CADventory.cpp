@@ -31,6 +31,7 @@ CADventory::CADventory(int &argc, char *argv[]) : QApplication (argc, argv), win
   qInfo().noquote() << underlineStart + appName + " " + appVersion + underlineEnd;
   qInfo() << "Loading ... please wait.";
 
+  // if any arg is specified, assume CLI-mode
   if (argc > 1) {
     this->gui = false;
     connect(this, &CADventory::indexingComplete, this, &QCoreApplication::quit);
