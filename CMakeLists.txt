@@ -126,7 +126,8 @@ if(BRLCAD_FOUND)
   message(STATUS "BRL-CAD found.")
   message(STATUS "BRLCAD_LIBRARIES: ${BRLCAD_LIBRARIES}")
   message(STATUS "BRLCAD_INCLUDE_DIRS: ${BRLCAD_INCLUDE_DIRS}")
-  # Include the BRL-CAD include directories
+  # Include the BRL-CAD include 
+  target_compile_definitions(cadventory PRIVATE RT_DLL_IMPORTS)
   target_include_directories(cadventory PRIVATE ${BRLCAD_INCLUDE_DIRS})
   # Link against BRLCAD::BRLCAD
   target_link_libraries(cadventory PRIVATE BRLCAD::BRLCAD)
@@ -135,15 +136,9 @@ else()
 endif()
 
 # Find the BRL-CAD executables
-if(WIN32)
-  set(MGED_EXECUTABLE "${BRLCAD_ROOT}/bin/mged.exe")
-  set(RT_EXECUTABLE "${BRLCAD_ROOT}/bin/rt.exe")
-  set(GIST_EXECUTABLE "${BRLCAD_ROOT}/bin/gist.exe")
-else(WIN32)
-  set(MGED_EXECUTABLE "${BRLCAD_ROOT}/bin/mged")
-  set(RT_EXECUTABLE "${BRLCAD_ROOT}/bin/rt")
-  set(GIST_EXECUTABLE "${BRLCAD_ROOT}/bin/gist")
-endif(WIN32)
+set(MGED_EXECUTABLE "${BRLCAD_ROOT}/bin/mged${CMAKE_EXECUTABLE_SUFFIX}")
+set(RT_EXECUTABLE "${BRLCAD_ROOT}/bin/rt${CMAKE_EXECUTABLE_SUFFIX}")
+set(GIST_EXECUTABLE "${BRLCAD_ROOT}/bin/gist${CMAKE_EXECUTABLE_SUFFIX}")
 
 if(NOT EXISTS "${MGED_EXECUTABLE}" OR NOT EXISTS "${RT_EXECUTABLE}" OR NOT EXISTS "${GIST_EXECUTABLE}")
   message(FATAL_ERROR "Could not find BRL-CAD executables. Please ensure BRLCAD_ROOT is set correctly.")
