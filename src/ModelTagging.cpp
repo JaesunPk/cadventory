@@ -1,11 +1,3 @@
-#ifdef _WIN32
-#define WIN32_LEAN_AND_MEAN
-#define NOMINMAX
-#include <Windows.h>
-#include <shellapi.h>
-#pragma comment(lib, "Shell32.lib")
-#endif
-
 #include <iostream>
 #include <string>
 #include <sstream>
@@ -17,52 +9,32 @@
 #include <QProcess>
 #include <QDebug>
 
-bool ModelTagging::checkOllamaAvailability() {
-    QProcess process;
 
+bool ModelTagging::checkOllamaAvailability() {
 #ifdef _WIN32
-    // Set creation flags to prevent showing console window
-    process.setCreateProcessArgumentsModifier([](QProcess::CreateProcessArguments* args) {
-        args->flags |= CREATE_NO_WINDOW;
-        });
-    process.start("where", QStringList() << "ollama");
+    // Windows command
+    int result = std::system("where ollama >nul 2>nul");
 #else
-    process.start("which", QStringList() << "ollama");
+    // Linux/Mac command
+    int result = std::system("which ollama >/dev/null 2>&1");
 #endif
 
-    process.waitForFinished();
-    return process.exitCode() == 0;
+    return result == 0;
 }
 
 bool ModelTagging::checkModelAvailability(const std::string& modelName) {
-    QProcess process;
-
 #ifdef _WIN32
-    // Set creation flags to prevent showing console window
-    process.setCreateProcessArgumentsModifier([](QProcess::CreateProcessArguments* args) {
-        args->flags |= CREATE_NO_WINDOW;
-        });
-
-    // Get the full list of models first
-    process.start("cmd", QStringList() << "/c" << "ollama list");
-    process.waitForFinished();
-
-    if (process.exitCode() != 0) {
-        qDebug() << "Ollama list command failed with exit code:" << process.exitCode();
-        return false;
-    }
-
-    // Read the output and check if the model name exists in it
-    QString output = process.readAllStandardOutput();
-    qDebug() << "Ollama available models:" << output;
-
-    return output.contains(QString::fromStdString(modelName));
+    // Windows command (redirect to null)
+    std::string command = "ollama list | findstr \"" + modelName + "\" >nul 2>nul";
 #else
-    process.start("sh", QStringList() << "-c" << QString::fromStdString("ollama list | grep -q \"" + modelName + "\""));
-    process.waitForFinished();
-    return process.exitCode() == 0;
+    // Linux/Mac command
+    std::string command = "ollama list | grep -q \"" + modelName + "\"";
 #endif
+
+    int result = std::system(command.c_str());
+    return result == 0;
 }
+
 
 ModelTagging::ModelTagging(){
     // instantiate the parser
@@ -136,51 +108,10 @@ std::vector<std::string> ModelTagging::generateTags(std::string filepath) {
     promptFile << prompt.str();
     promptFile.close();
 
-    bool success = false;
+    std::string command = "ollama run llama3 < prompt.txt > temp_tags.txt";
+    int result = std::system(command.c_str());
 
-#ifdef _WIN32
-    // Create a batch file that will run the command without showing the window
-    std::ofstream batchFile("run_ollama.bat");
-    batchFile << "@echo off\r\n";
-    batchFile << "ollama run llama3 < prompt.txt > temp_tags.txt\r\n";
-    batchFile << "exit /b %ERRORLEVEL%\r\n";
-    batchFile.close();
-
-    // Convert to wide characters for Windows API
-    std::wstring wBatchFile = L"run_ollama.bat";
-    std::wstring wParameters = L"";
-
-    // Use ShellExecuteEx to run the batch file without showing a window
-    SHELLEXECUTEINFO shExInfo = { 0 };
-    shExInfo.cbSize = sizeof(shExInfo);
-    shExInfo.fMask = SEE_MASK_NOCLOSEPROCESS;
-    shExInfo.hwnd = NULL;
-    shExInfo.lpVerb = NULL;
-    shExInfo.lpFile = wBatchFile.c_str();
-    shExInfo.lpParameters = wParameters.c_str();
-    shExInfo.lpDirectory = NULL;
-    shExInfo.nShow = SW_HIDE;
-    shExInfo.hInstApp = NULL;
-
-    if (ShellExecuteEx(&shExInfo)) {
-        WaitForSingleObject(shExInfo.hProcess, INFINITE);
-        DWORD exitCode;
-        GetExitCodeProcess(shExInfo.hProcess, &exitCode);
-        CloseHandle(shExInfo.hProcess);
-        success = (exitCode == 0);
-    }
-
-    // Delete the batch file
-    std::remove("run_ollama.bat");
-#else
-    // Use process on non-Windows platforms
-    QProcess process;
-    process.start("sh", QStringList() << "-c" << "ollama run llama3 < prompt.txt > temp_tags.txt");
-    process.waitForFinished(-1);
-    success = (process.exitCode() == 0);
-#endif
-
-    if (success) {
+    if (result == 0) {
         // Clear previous tags
         tags.clear();
         
