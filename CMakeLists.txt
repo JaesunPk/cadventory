@@ -61,6 +61,8 @@ set(SRCS
   src/ModelView.cpp
   src/FileSystemModelWithCheckboxes.cpp
   src/FileSystemFilterProxyModel.cpp
+  src/ModelTagging.cpp
+  src/ModelParser.cpp
 )
 
 set(UIS
@@ -87,6 +89,9 @@ set(HEADERS
   src/SettingWindow.h
   src/FileSystemModelWithCheckboxes.h
   src/FileSystemFilterProxyModel.h
+  src/ModelTagging.h
+  src/ModelParser.h
+  src/ModelMetadata.h
 )
 
 set(CMAKE_AUTORCC ON)

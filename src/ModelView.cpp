@@ -8,6 +8,8 @@
 #include "Model.h"
 #include "GeometryBrowserDialog.h"
 #include "ui_modelview.h"
+#include "CADventory.h"
+#include "ModelTagging.h"
 
 ModelView::ModelView(int modelId, Model* model, QWidget* parent)
     : QDialog(parent), modelId(modelId), model(model) {
@@ -149,7 +151,19 @@ void ModelView::onOkClicked() {
 }
 
 void ModelView::onGenerateTagsClicked() {
-    QStringList dummyTags = { "tag1", "tag2", "tag3" };
+    // generate tags
+	CADventory* app = qobject_cast<CADventory*>(QCoreApplication::instance());
+	ModelTagging* modelTagging = app->getModelTagging();
+	//send filepath of model to generate tags
+	std::vector<std::string> tags = modelTagging->generateTags(currModel.file_path);
+
+	// convert tags to QString
+    QStringList dummyTags;
+
+	for (const std::string& tag : tags) {
+		dummyTags.append(QString::fromStdString(tag));
+	}
+
     for (const QString& tag : dummyTags) {
         // Avoid duplicates
         bool alreadyExists = false;

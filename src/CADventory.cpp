@@ -15,23 +15,24 @@
 
 CADventory::CADventory(int &argc, char *argv[]) : QApplication (argc, argv), window(nullptr), splash(nullptr), loaded(false), gui(true)
 {
-  setOrganizationName("BRL-CAD");
-  setOrganizationDomain("brlcad.org");
-  setApplicationName("CADventory");
-  setApplicationVersion("0.1.0");
+	// instantiate the model tagging object
+	this->modelTagging = new ModelTagging();
 
-  QString appName = QCoreApplication::applicationName();
-  QString appVersion = QCoreApplication::applicationVersion();
+    setOrganizationName("BRL-CAD");
+    setOrganizationDomain("brlcad.org");
+    setApplicationName("CADventory");
+    setApplicationVersion("0.1.0");
 
-  // ANSI escape codes for underlining and reset
-  QString underlineStart = "\033[4m";
-  QString underlineEnd = "\033[0m";
+    QString appName = QCoreApplication::applicationName();
+    QString appVersion = QCoreApplication::applicationVersion();
 
-  // print underlined application name and version
-  qInfo().noquote() << underlineStart + appName + " " + appVersion + underlineEnd;
-  qInfo() << "Loading ... please wait.";
+    // ANSI escape codes for underlining and reset
+    QString underlineStart = "\033[4m";
+    QString underlineEnd = "\033[0m";
 
+  // if any arg is specified, assume CLI-mode
   if (argc > 1) {
+
     this->gui = false;
     connect(this, &CADventory::indexingComplete, this, &QCoreApplication::quit);
 
@@ -39,7 +40,7 @@ CADventory::CADventory(int &argc, char *argv[]) : QApplication (argc, argv), win
     QSettings settings;
     settings.clear();
     settings.sync();
-  }
+    }
 }
 
 
@@ -47,6 +48,8 @@ CADventory::~CADventory()
 {
   delete window;
   delete splash;
+
+  delete modelTagging;
 }
 
 
