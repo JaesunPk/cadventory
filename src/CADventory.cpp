@@ -80,7 +80,7 @@ void CADventory::showSplash()
   /* first look rel to binary */
   QString relativePathToBinary = QCoreApplication::applicationDirPath() + "/../share/splash.png";
   /* alternatively look rel to cwd */
-  QString fallbackPath = QDir::current().absoluteFilePath("../splash.png");
+  QString fallbackPath = QDir::current().absoluteFilePath("../src/splash.png");
 
   QPixmap pixmap;
   if (QFile::exists(relativePathToBinary)) {
