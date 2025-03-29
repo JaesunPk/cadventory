@@ -62,12 +62,12 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
     viewMenu->addAction(test);
     helpMenu->addAction(test);
 
-
+    // Some menu items do not have any functionality yet, but are placeholders for future features
     menuBar()->addMenu(fileMenu);
-    menuBar()->addMenu(editMenu);
-    menuBar()->addMenu(viewMenu);
+    // menuBar()->addMenu(editMenu);
+    // menuBar()->addMenu(viewMenu);
     menuBar()->addMenu(windowMenu);
-    menuBar()->addMenu(helpMenu);
+    // menuBar()->addMenu(helpMenu);
 
     settingWindow = new SettingWindow(this);
     connect(set,&QAction::triggered,this,&MainWindow::showSettingsWindow);

@@ -96,6 +96,8 @@
     "qlabel": "cpp",
     "qlistview": "cpp",
     "qhboxlayout": "cpp",
-    "source_location": "cpp"
+    "xhash": "cpp",
+    "xtree": "cpp",
+    "xutility": "cpp"
   }
 }
