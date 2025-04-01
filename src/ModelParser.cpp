@@ -6,6 +6,7 @@
 #include <memory>
 #include <algorithm>
 #include <sstream>
+#include "executeCommand.h"
 
 #ifdef _WIN32
 #define _CRT_SECURE_NO_WARNINGS  
@@ -16,44 +17,12 @@ ModelParser::ModelParser() {
     // Constructor implementation (if needed)
 }
 
-std::string executeCommand(const std::string& command) {
-    std::array<char, 128> buffer;
-    std::string result;
-
-#ifdef _WIN32
-    FILE* pipe = _popen((command + " 2>&1").c_str(), "r");  // Capture both stdout and stderr
-#else
-    FILE* pipe = popen((command + " 2>&1").c_str(), "r");
-#endif
-
-    if (!pipe) {
-        std::cerr << "Failed to run command: " << command << std::endl;
-        return "ERROR: Command failed";
-    }
-
-    while (fgets(buffer.data(), buffer.size(), pipe) != nullptr) {
-        result += buffer.data();
-    }
-
-#ifdef _WIN32
-    int exitCode = _pclose(pipe);
-#else
-    int exitCode = pclose(pipe);
-#endif
-
-    if (exitCode != 0) {
-        std::cerr << "Command failed with exit code: " << exitCode << "\nOutput:\n" << result << std::endl;
-    }
-
-    return result;
-}
-
 std::vector<std::string> fetchObjectFiles(const std::string& path) {
     std::vector<std::string> objectFiles;
 
     for (int i = 1; i < 10; i++) {
         std::string command = "mged -c \"" + path + "\" search / -depth " + std::to_string(i);
-        std::string output = executeCommand(command);
+        std::string output = executeCommandNoWindow(command);
 
         // Ensure output lines are properly split
         std::istringstream objStream(output);
@@ -81,7 +50,7 @@ std::vector<std::string> fetchObjectFiles(const std::string& path) {
 
 
 std::string fetchTitle(const std::string& path) {
-    return executeCommand("mged -c \"" + path + "\" title 2>&1");
+    return executeCommandNoWindow("mged -c \"" + path + "\" title 2>&1");
 }
 
 std::string convertToUnixPath(const std::string& windowsPath) {

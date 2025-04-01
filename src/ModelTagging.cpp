@@ -8,12 +8,13 @@
 #include "ModelTagging.h"
 #include <QProcess>
 #include <QDebug>
-
+#include "executeCommand.h"
 
 bool ModelTagging::checkOllamaAvailability() {
 #ifdef _WIN32
     // Windows command
-    int result = std::system("where ollama >nul 2>nul");
+	std::string output = executeCommandNoWindow("where ollama");
+	int result = output.find("ollama") == std::string::npos;
 #else
     // Linux/Mac command
     int result = std::system("which ollama >/dev/null 2>&1");
@@ -25,14 +26,14 @@ bool ModelTagging::checkOllamaAvailability() {
 bool ModelTagging::checkModelAvailability(const std::string& modelName) {
 #ifdef _WIN32
     // Windows command (redirect to null)
-    std::string command = "ollama list | findstr \"" + modelName + "\" >nul 2>nul";
+    std::string output = executeCommandNoWindow("ollama list");
+    return output.find(modelName) != std::string::npos;
 #else
     // Linux/Mac command
     std::string command = "ollama list | grep -q \"" + modelName + "\"";
+	int result = std::system(command.c_str());
+	return result == 0;
 #endif
-
-    int result = std::system(command.c_str());
-    return result == 0;
 }
 
 
@@ -108,67 +109,54 @@ std::vector<std::string> ModelTagging::generateTags(std::string filepath) {
     promptFile << prompt.str();
     promptFile.close();
 
-    std::string command = "ollama run llama3 < prompt.txt > temp_tags.txt";
-    int result = std::system(command.c_str());
+    std::string command = "cmd.exe /C \"ollama run llama3 < prompt.txt > temp_tags.txt\"";
+    std::string result = executeCommandNoWindow(command);
 
-    if (result == 0) {
-        // Clear previous tags
-        tags.clear();
+    // Clear previous tags
+    tags.clear();
         
-        // Read the output from temp_tags.txt
-        std::ifstream file("temp_tags.txt");
-        std::string content((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
-        file.close();
+    // Read the output from temp_tags.txt
+    std::ifstream file("temp_tags.txt");
+    std::string content((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
+    file.close();
         
-        // Parse the tags from the output using regex to find single words
-        // This handles various potential formats that the LLM might respond with
-        std::regex tagPattern(R"((?:^|\n)([A-Za-z]+)(?:\n|$))");
-        std::sregex_iterator it(content.begin(), content.end(), tagPattern);
-        std::sregex_iterator end;
+    // Parse the tags from the output using regex to find single words
+    // This handles various potential formats that the LLM might respond with
+    std::regex tagPattern(R"((?:^|\n)([A-Za-z]+)(?:\n|$))");
+    std::sregex_iterator it(content.begin(), content.end(), tagPattern);
+    std::sregex_iterator end;
         
-        // Extract tags, taking at most 10
-        int count = 0;
-        while (it != end && count < 10) {
-            std::string tag = (*it)[1];
-            if (!tag.empty()) {
-                tags.push_back(tag);
-                count++;
-            }
-            ++it;
+    // Extract tags, taking at most 10
+    int count = 0;
+    while (it != end && count < 10) {
+        std::string tag = (*it)[1];
+        if (!tag.empty()) {
+            tags.push_back(tag);
+            count++;
         }
-        
-        // If we didn't get enough tags, try a simpler parsing approach
-        if (tags.size() < 10) {
-            // Alternative parsing for different output formats
-            std::istringstream contentStream(content);
-            std::string line;
-            tags.clear();
-            
-            while (std::getline(contentStream, line) && tags.size() < 10) {
-                // Trim whitespace
-                line.erase(0, line.find_first_not_of(" \t\n\r\f\v"));
-                line.erase(line.find_last_not_of(" \t\n\r\f\v") + 1);
-                
-                // Skip empty lines and lines with non-tag content
-                if (line.empty() || line.find(' ') != std::string::npos || 
-                    !std::isalpha(line[0])) {
-                    continue;
-                }
-                
-                tags.push_back(line);
-            }
-        }
-        
-        // Print the tags for verification
-        // std::cout << "\nGenerated " << tags.size() << " tags for: " << metadata.title << std::endl;
-        // std::cout << "-------------------------------------" << std::endl;
-        // for (const auto& tag : tags) {
-        //     std::cout << "- " << tag << std::endl;
-        // }
-        // std::cout << "-------------------------------------" << std::endl;
+        ++it;
     }
-    else {
-        std::cerr << "ERROR: LLaMA call failed." << std::endl;
+        
+    // If we didn't get enough tags, try a simpler parsing approach
+    if (tags.size() < 10) {
+        // Alternative parsing for different output formats
+        std::istringstream contentStream(content);
+        std::string line;
+        tags.clear();
+            
+        while (std::getline(contentStream, line) && tags.size() < 10) {
+            // Trim whitespace
+            line.erase(0, line.find_first_not_of(" \t\n\r\f\v"));
+            line.erase(line.find_last_not_of(" \t\n\r\f\v") + 1);
+                
+            // Skip empty lines and lines with non-tag content
+            if (line.empty() || line.find(' ') != std::string::npos || 
+                !std::isalpha(line[0])) {
+                continue;
+            }
+                
+            tags.push_back(line);
+        }
     }
 
 	// Remove the temp files
