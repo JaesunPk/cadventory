@@ -517,7 +517,6 @@
 
 
 
-
 #include "ProcessGFiles.h"
 #include <brlcad/ged.h>
 #include <QDebug>
@@ -526,18 +525,22 @@
 #include <QSettings>
 #include <QFile>
 #include <QDir>
+#include "config.h"
+#include <string>
+#include <algorithm>
 #include <filesystem>
 
-#include "config.h"
-
-// Define shell paths and arguments based on platform.
-#ifdef Q_OS_WIN
-static const QString SHELL_PATH = QStringLiteral("cmd.exe");
-static const QStringList SHELL_ARGS = { "/c" };
-#else
-static const QString SHELL_PATH = QStringLiteral("/bin/sh");
-static const QStringList SHELL_ARGS = {};
-#endif
+// Helper function to truncate a path if it exceeds maxLen (default 50 characters).
+// It keeps the first part and the last part of the path and places "..." in between.
+static std::string truncatePath(const std::string& path, size_t maxLen = 20) {
+    if (path.length() <= maxLen) {
+        return path;
+    }
+    // Calculate how many characters to show from the front and back.
+    size_t frontLen = (maxLen - 3) / 2;
+    size_t backLen = maxLen - 3 - frontLen;
+    return path.substr(0, frontLen) + "..." + path.substr(path.length() - backLen);
+}
 
 ProcessGFiles::ProcessGFiles(Model* model)
     : model(model)
@@ -546,8 +549,10 @@ ProcessGFiles::ProcessGFiles(Model* model)
 
 void ProcessGFiles::processGFile(const ModelData& modelData)
 {
+    // Use truncated path for debug output only.
+    std::string displayPath = truncatePath(modelData.file_path);
     qDebug() << "[ProcessGFiles::processGFile] Processing model with ID:" << modelData.id
-        << "and file path:" << QString::fromStdString(modelData.file_path);
+        << "and file path:" << QString::fromStdString(displayPath);
 
     // Ensure file path is not empty
     if (modelData.file_path.empty()) {
@@ -555,12 +560,12 @@ void ProcessGFiles::processGFile(const ModelData& modelData)
         return;
     }
 
-    // Open the BRL-CAD database
+    // Open the BRL-CAD database using the full path.
     const char* db_filename = modelData.file_path.c_str();
     struct ged* gedp = ged_open("db", db_filename, 0);
     if (gedp == GED_NULL) {
         qDebug() << "[ProcessGFiles::processGFile] Error: Unable to open BRL-CAD database at path:"
-            << QString::fromStdString(modelData.file_path);
+            << QString::fromStdString(displayPath);
         return;
     }
 
@@ -571,7 +576,7 @@ void ProcessGFiles::processGFile(const ModelData& modelData)
     extractTitle(updatedModelData, gedp);
     qDebug() << "[ProcessGFiles::processGFile] Title extracted:" << QString::fromStdString(updatedModelData.title);
 
-    // Update the model in the database with the extracted title
+    // Update the model in the database with the extracted title.
     if (!model->updateModel(updatedModelData.id, updatedModelData)) {
         qDebug() << "[ProcessGFiles::processGFile] Error: Could not update model in database for ID:"
             << updatedModelData.id;
@@ -629,7 +634,8 @@ void ProcessGFiles::processGFile(const ModelData& modelData)
     }
 
     ged_close(gedp);
-    qDebug() << "[ProcessGFiles::processGFile] Completed processing for path:" << QString::fromStdString(updatedModelData.file_path);
+    // Use the truncated version for the final debug output.
+    qDebug() << "[ProcessGFiles::processGFile] Completed processing for path:" << QString::fromStdString(truncatePath(updatedModelData.file_path));
 }
 
 void ProcessGFiles::extractTitle(ModelData& modelData, struct ged* gedp)
@@ -701,6 +707,7 @@ void ProcessGFiles::extractObjects(ModelData& modelData, struct ged* gedp)
 
         // Create ObjectData for the top-level object
         ObjectData topLevelObjData;
+
         topLevelObjData.model_id = modelData.id;
         topLevelObjData.name = object_name;
         topLevelObjData.parent_object_id = -1; // -1 indicates no parent
@@ -728,13 +735,11 @@ void ProcessGFiles::extractObjects(ModelData& modelData, struct ged* gedp)
 
         // If this top-level object is a combination, retrieve and insert its children
         if (dir[i]->d_flags & RT_DIR_COMB) {
-            qDebug() << "[ProcessGFiles::extractObjects] Object" << QString::fromStdString(object_name)
-                << "is a combination. Retrieving children.";
+            qDebug() << "[ProcessGFiles::extractObjects] Object" << QString::fromStdString(object_name) << "is a combination. Retrieving children.";
             insertChildObjects(modelData, gedp, topLevelObjData, selected_object_name);
         }
         else {
-            qDebug() << "[ProcessGFiles::extractObjects] Object" << QString::fromStdString(object_name)
-                << "is a primitive. No child objects to insert.";
+            qDebug() << "[ProcessGFiles::extractObjects] Object" << QString::fromStdString(object_name) << "is a primitive. No child objects to insert.";
         }
     }
 
@@ -745,35 +750,30 @@ void ProcessGFiles::extractObjects(ModelData& modelData, struct ged* gedp)
 
 void ProcessGFiles::insertChildObjects(ModelData& modelData, struct ged* gedp, const ObjectData& parentObjData, const std::string& selected_object_name)
 {
-    qDebug() << "[ProcessGFiles::insertChildObjects] Started for parent object ID:" << parentObjData.object_id
-        << "Name:" << QString::fromStdString(parentObjData.name);
+    qDebug() << "[ProcessGFiles::insertChildObjects] Started for parent object ID:" << parentObjData.object_id << "Name:" << QString::fromStdString(parentObjData.name);
 
     struct directory* parent_dir = db_lookup(gedp->dbip, parentObjData.name.c_str(), LOOKUP_QUIET);
     if (!parent_dir) {
-        qDebug() << "[ProcessGFiles::insertChildObjects] Parent object" << QString::fromStdString(parentObjData.name)
-            << "not found in database.";
+        qDebug() << "[ProcessGFiles::insertChildObjects] Parent object" << QString::fromStdString(parentObjData.name) << "not found in database.";
         return;
     }
 
     if (!(parent_dir->d_flags & RT_DIR_COMB)) {
-        qDebug() << "[ProcessGFiles::insertChildObjects] Parent object" << QString::fromStdString(parentObjData.name)
-            << "is not a combination. No children to insert.";
+        qDebug() << "[ProcessGFiles::insertChildObjects] Parent object" << QString::fromStdString(parentObjData.name) << "is not a combination. No children to insert.";
         return;
     }
 
     struct rt_db_internal intern;
     struct rt_comb_internal* comb;
     if (rt_db_get_internal(&intern, parent_dir, gedp->dbip, nullptr, &rt_uniresource) < 0) {
-        qDebug() << "[ProcessGFiles::insertChildObjects] Error retrieving internal representation for object"
-            << QString::fromStdString(parentObjData.name);
+        qDebug() << "[ProcessGFiles::insertChildObjects] Error retrieving internal representation for object" << QString::fromStdString(parentObjData.name);
         return;
     }
 
     comb = static_cast<struct rt_comb_internal*>(intern.idb_ptr);
 
     if (!comb->tree) {
-        qDebug() << "[ProcessGFiles::insertChildObjects] Combination" << QString::fromStdString(parentObjData.name)
-            << "has no children.";
+        qDebug() << "[ProcessGFiles::insertChildObjects] Combination" << QString::fromStdString(parentObjData.name) << "has no children.";
         rt_db_free_internal(&intern);
         return;
     }
@@ -782,8 +782,7 @@ void ProcessGFiles::insertChildObjects(ModelData& modelData, struct ged* gedp, c
     std::vector<std::string> children;
     db_tree_list_comb_children(comb->tree, children);
 
-    qDebug() << "[ProcessGFiles::insertChildObjects] Number of children found for object"
-        << QString::fromStdString(parentObjData.name) << ":" << children.size();
+    qDebug() << "[ProcessGFiles::insertChildObjects] Number of children found for object" << QString::fromStdString(parentObjData.name) << ":" << children.size();
 
     // Insert each child object into the database
     for (const auto& child_name : children) {
@@ -792,8 +791,7 @@ void ProcessGFiles::insertChildObjects(ModelData& modelData, struct ged* gedp, c
         // Lookup the child's directory entry
         struct directory* child_dir = db_lookup(gedp->dbip, child_name.c_str(), LOOKUP_QUIET);
         if (!child_dir) {
-            qDebug() << "[ProcessGFiles::insertChildObjects] Child object" << QString::fromStdString(child_name)
-                << "not found in database.";
+            qDebug() << "[ProcessGFiles::insertChildObjects] Child object" << QString::fromStdString(child_name) << "not found in database.";
             continue;
         }
 
@@ -814,23 +812,19 @@ void ProcessGFiles::insertChildObjects(ModelData& modelData, struct ged* gedp, c
         if (childInsertedObjectId == -1) {
             qDebug() << "[ProcessGFiles::insertChildObjects] Failed to insert child object:"
                 << QString::fromStdString(childObjData.name)
-                << "for parent object ID:" << parentObjData.object_id
-                << "model ID:" << childObjData.model_id;
+                << "for parent object ID:" << parentObjData.object_id << "model ID:" << childObjData.model_id;
         }
         else {
             childObjData.object_id = childInsertedObjectId;
             qDebug() << "[ProcessGFiles::insertChildObjects] Successfully inserted child object:"
                 << QString::fromStdString(childObjData.name)
-                << "with ID:" << childInsertedObjectId
-                << "for parent object ID:" << parentObjData.object_id
-                << "model ID:" << childObjData.model_id;
+                << "with ID:" << childInsertedObjectId << "for parent object ID:" << parentObjData.object_id << "model ID:" << childObjData.model_id;
         }
     }
 
     rt_db_free_internal(&intern);
 
-    qDebug() << "[ProcessGFiles::insertChildObjects] Completed for parent object ID:" << parentObjData.object_id
-        << "Name:" << QString::fromStdString(parentObjData.name);
+    qDebug() << "[ProcessGFiles::insertChildObjects] Completed for parent object ID:" << parentObjData.object_id << "Name:" << QString::fromStdString(parentObjData.name);
 }
 
 
@@ -866,10 +860,11 @@ bool ProcessGFiles::generateThumbnail(ModelData& modelData, const std::string& s
 
     if (selected_object_name.empty()) {
         qDebug() << "[ProcessGFiles::generateThumbnail] No valid object selected for raytrace in file:"
-            << QString::fromStdString(modelData.file_path);
+            << QString::fromStdString(truncatePath(modelData.file_path));
         return false;
     }
 
+    // Ensure the .g file path is present in modelData
     if (modelData.file_path.empty()) {
         qDebug() << "[ProcessGFiles::generateThumbnail] No file path available in modelData for generating thumbnail.";
         return false;
@@ -883,36 +878,28 @@ bool ProcessGFiles::generateThumbnail(ModelData& modelData, const std::string& s
     // Use the RT_EXECUTABLE_PATH from configuration
     QString rtExecutable = QStringLiteral(RT_EXECUTABLE_PATH);
 
-    // Split the command into two parts.
-    QString rtCmdPart1 = rtExecutable + " -s512 -o \"" + pngFilePath + "\"";
-    QString rtCmdPart2 = " \"" + QString::fromStdString(modelData.file_path) + "\" " +
+    // Construct the rt command (using the full file path so the external tool can find it)
+    QString rtCommand = rtExecutable + " -s512 -o \"" + pngFilePath + "\" \"" +
+        QString::fromStdString(modelData.file_path) + "\" " +
         QString::fromStdString(selected_object_name);
 
+    qDebug() << "[ProcessGFiles::generateThumbnail] Running command:" << rtCommand;
+
     QProcess process;
-    process.setProgram(SHELL_PATH);
-    process.setArguments(SHELL_ARGS);
+    process.setProgram("/bin/sh");
+    process.setArguments({ "-c", rtCommand });
+    process.setProcessChannelMode(QProcess::MergedChannels);
+
     process.start();
     if (!process.waitForStarted()) {
-        qDebug() << "[ProcessGFiles::generateThumbnail] Failed to start shell for thumbnail command.";
+        qDebug() << "[ProcessGFiles::generateThumbnail] Failed to start the process for command:" << rtCommand;
         return false;
     }
 
-#ifdef Q_OS_WIN
-    // On Windows use caret (^) for line continuation.
-    process.write(rtCmdPart1.toUtf8());
-    process.write(" ^\n");
-    process.write(rtCmdPart2.toUtf8());
-    process.write("\n");
-#else
-    // On non-Windows, simply send the command in two parts.
-    process.write(rtCmdPart1.toUtf8());
-    process.write(" \\\n");
-    process.write(rtCmdPart2.toUtf8());
-    process.write("\n");
-#endif
-    process.closeWriteChannel();
+    bool finishedInTime = process.waitForFinished(timeLimitMs);
 
-    if (!process.waitForFinished(timeLimitMs)) {
+    if (!finishedInTime) {
+        // The process did not finish in the allotted time
         qDebug() << "[ProcessGFiles::generateThumbnail] Command timed out after" << timeLimitMs / 1000 << "seconds.";
         process.kill();
         process.waitForFinished();
@@ -926,14 +913,18 @@ bool ProcessGFiles::generateThumbnail(ModelData& modelData, const std::string& s
         return false;
     }
 
+    // Ensure the PNG was successfully created
     if (!QFile::exists(pngFilePath) || QFileInfo(pngFilePath).size() == 0) {
-        qDebug() << "[ProcessGFiles::generateThumbnail] Generated thumbnail file is empty or missing at path:" << pngFilePath;
+        qDebug() << "[ProcessGFiles::generateThumbnail] Generated thumbnail file is empty or missing at path:"
+            << pngFilePath;
         return false;
     }
 
+    // Read the generated thumbnail data
     QFile thumbnailFile(pngFilePath);
     if (!thumbnailFile.open(QIODevice::ReadOnly)) {
-        qDebug() << "[ProcessGFiles::generateThumbnail] Failed to open thumbnail file at:" << pngFilePath;
+        qDebug() << "[ProcessGFiles::generateThumbnail] Failed to open thumbnail file at:"
+            << pngFilePath;
         return false;
     }
 
@@ -945,8 +936,10 @@ bool ProcessGFiles::generateThumbnail(ModelData& modelData, const std::string& s
         return false;
     }
 
+    // Convert thumbnail data to std::vector<char>
     modelData.thumbnail.assign(thumbnailData.begin(), thumbnailData.end());
 
+    // Delete the PNG file after loading it
     if (!QFile::remove(pngFilePath)) {
         qDebug() << "[ProcessGFiles::generateThumbnail] Could not remove PNG file at" << pngFilePath;
     }
@@ -957,15 +950,14 @@ bool ProcessGFiles::generateThumbnail(ModelData& modelData, const std::string& s
     return true;
 }
 
-
-std::tuple<bool, std::string, std::string> ProcessGFiles::generateGistReport(const std::string& inputFilePath,
-    const std::string& outputFilePath,
-    const std::string& primary_obj,
-    const std::string& label)
+std::tuple<bool, std::string, std::string> ProcessGFiles::generateGistReport(const std::string& inputFilePath, const std::string& outputFilePath, const std::string& primary_obj, const std::string& label)
 {
+    std::string gistCommand;
     std::string errorMessage;
-    qDebug() << "[ProcessGFiles::generateGistReport] Started for inputFilePath:" << QString::fromStdString(inputFilePath)
-        << ", outputFilePath:" << QString::fromStdString(outputFilePath)
+
+    // Use truncated paths for debug display.
+    qDebug() << "[ProcessGFiles::generateGistReport] Started for inputFilePath:" << QString::fromStdString(truncatePath(inputFilePath))
+        << ", outputFilePath:" << QString::fromStdString(truncatePath(outputFilePath))
         << ", primary_obj:" << QString::fromStdString(primary_obj)
         << ", label:" << QString::fromStdString(label);
 
@@ -981,55 +973,40 @@ std::tuple<bool, std::string, std::string> ProcessGFiles::generateGistReport(con
     arguments << QString::fromStdString(inputFilePath)
         << "-o" << QString::fromStdString(outputFilePath);
 
-    if (!primary_obj.empty()) {
+    /*if (!primary_obj.empty()) {
         arguments << "-t" << QString::fromStdString(primary_obj);
     }
     if (!label.empty()) {
         arguments << "-c" << QString::fromStdString(label);
-    }
+    }*/
 
-    // Split the command into two parts by dividing the arguments.
-    int argCount = arguments.size();
-    int half = argCount / 2;
-    QString firstHalf = arguments.mid(0, half).join(" ");
-    QString secondHalf = arguments.mid(half).join(" ");
-
-    QString gistCmdPart1 = gistExecutable + " " + firstHalf;
-    QString gistCmdPart2 = secondHalf;
-
-    QProcess process;
-    process.setProgram(SHELL_PATH);
-    process.setArguments(SHELL_ARGS);
-    process.start();
-    if (!process.waitForStarted()) {
-        errorMessage = "Failed to start shell for gist command.";
-        qDebug() << "[ProcessGFiles::generateGistReport]" << QString::fromStdString(errorMessage);
-        return { false, errorMessage, "" };
-    }
-
-#ifdef Q_OS_WIN
-    // On Windows use caret (^) for line continuation.
-    process.write(gistCmdPart1.toUtf8());
-    process.write(" ^\n");
-    process.write(gistCmdPart2.toUtf8());
-    process.write("\n");
-#else
-    // On non-Windows, use backslash (\) for line continuation.
-    process.write(gistCmdPart1.toUtf8());
-    process.write(" \\\n");
-    process.write(gistCmdPart2.toUtf8());
-    process.write("\n");
-#endif
-    process.closeWriteChannel();
+    gistCommand = gistExecutable.toStdString() + " " + arguments.join(" ").toStdString();
+    qDebug() << "[ProcessGFiles::generateGistReport] Running gist command:" << QString::fromStdString(gistCommand);
 
     QSettings settings;
-    int timeLimitMs = settings.value("gistReportTimer", 10).toInt() * 1000;
-    if (!process.waitForFinished(timeLimitMs)) {
+    int timeLimitMs = settings.value("gistReportTimer", 10000).toInt() * 1000;
+
+    QProcess process;
+    process.setProgram(gistExecutable);
+    process.setArguments(arguments);
+    process.setProcessChannelMode(QProcess::MergedChannels);
+
+    process.start();
+    if (!process.waitForStarted()) {
+        errorMessage = "Failed to start the gist process for command: " + gistCommand;
+        qDebug() << "[ProcessGFiles::generateGistReport]" << QString::fromStdString(errorMessage);
+        return { false, errorMessage, gistCommand };
+    }
+
+    bool finishedInTime = process.waitForFinished(timeLimitMs);
+
+    if (!finishedInTime) {
+        // The process did not finish in the allotted time
         errorMessage = "Gist command timed out after " + std::to_string(timeLimitMs / 1000) + " seconds.";
         qDebug() << "[ProcessGFiles::generateGistReport]" << QString::fromStdString(errorMessage);
         process.kill();
         process.waitForFinished();
-        return { false, errorMessage, (gistCmdPart1 + " ^ " + gistCmdPart2).toStdString() };
+        return { false, errorMessage, gistCommand };
     }
 
     int exitCode = process.exitCode();
@@ -1038,22 +1015,24 @@ std::tuple<bool, std::string, std::string> ProcessGFiles::generateGistReport(con
         std::string processOutput = process.readAllStandardOutput().toStdString();
         qDebug() << "[ProcessGFiles::generateGistReport]" << QString::fromStdString(errorMessage);
         qDebug() << "[ProcessGFiles::generateGistReport] Process output:" << QString::fromStdString(processOutput);
-        return { false, processOutput, (gistCmdPart1 + " ^ " + gistCmdPart2).toStdString() };
+        return { false, processOutput, gistCommand };
     }
 
+    // Check if the output file was generated
     QFileInfo outputFile(QString::fromStdString(outputFilePath));
     if (!outputFile.exists() || outputFile.size() == 0) {
         errorMessage = "Output file not generated or empty at path: " + outputFilePath;
         qDebug() << "[ProcessGFiles::generateGistReport]" << QString::fromStdString(errorMessage);
-        return { false, errorMessage, (gistCmdPart1 + " ^ " + gistCmdPart2).toStdString() };
+        return { false, errorMessage, gistCommand };
     }
 
     qDebug() << "[ProcessGFiles::generateGistReport] Gist report generated successfully for file:"
-        << QString::fromStdString(inputFilePath)
-        << "Output path:" << QString::fromStdString(outputFilePath);
+        << QString::fromStdString(truncatePath(inputFilePath))
+        << "Output path:" << QString::fromStdString(truncatePath(outputFilePath));
 
-    return { true, "", (gistCmdPart1 + " ^ " + gistCmdPart2).toStdString() };
+    return { true, "", gistCommand };
 }
+
 
 
 
