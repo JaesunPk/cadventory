@@ -158,6 +158,8 @@ void ModelView::onOkClicked() {
 void ModelView::onGenerateTagsClicked() {
     ui.tagStatusLabel->setText("Generating tags...");
     ui.generateTagsButton->setEnabled(false);
+    ui.generateTagsButton->setVisible(false);
+    ui.cancelTagButton->setVisible(true);
 
     // generate tags
 	CADventory* app = qobject_cast<CADventory*>(QCoreApplication::instance());
@@ -189,6 +191,8 @@ void ModelView::onGenerateTagsClicked() {
 
             ui.tagStatusLabel->setText("Tags generated!");
             ui.generateTagsButton->setEnabled(true);
+			ui.generateTagsButton->setVisible(true);
+			ui.cancelTagButton->setVisible(false);
             QTimer::singleShot(3000, this, [=]() { ui.tagStatusLabel->clear(); });
 
             disconnect(modelTagging, &ModelTagging::tagsGenerated, this, nullptr);
