@@ -8,6 +8,8 @@
 #include "ModelTagging.h"
 #include <QProcess>
 #include <QDebug>
+#include <QtConcurrent>
+#include <QFuture>
 #include "executeCommand.h"
 
 bool ModelTagging::checkOllamaAvailability() {
@@ -46,81 +48,101 @@ ModelTagging::~ModelTagging(){
 }
 
 void ModelTagging::generateTags(const std::string& filepath) {
-    if (!checkOllamaAvailability()) {
-        std::cerr << "ERROR: Ollama is not available." << std::endl;
-        emit tagsGenerated({});
-        return;
-    }
-    if (!checkModelAvailability(this->modelName)) {
-        std::cerr << "ERROR: Model " << this->modelName << " is not available." << std::endl;
-        emit tagsGenerated({});
-        return;
-    }
+    auto blockingTask = [this, filepath]() -> bool {
+        // Check if Ollama is available.
+        if (!checkOllamaAvailability()) {
+            std::cerr << "ERROR: Ollama is not available." << std::endl;
+            return false;
+        }
+        // Check if the model is available.
+        if (!checkModelAvailability(this->modelName)) {
+            std::cerr << "ERROR: Model " << this->modelName << " is not available." << std::endl;
+            return false;
+        }
+        // Parse metadata.
+        ModelMetadata metadata = parser.parseModel(filepath);
 
-    // Parse model metadata
-    ModelMetadata metadata = parser.parseModel(filepath);
-    std::ostringstream objectPathsStream;
-    for (const auto& object : metadata.objectFiles) {
-        objectPathsStream << "  - " << object << "\n";
-    }
+        // Build the prompt.
+        std::ostringstream objectPathsStream;
+        for (const auto& object : metadata.objectFiles) {
+            objectPathsStream << "  - " << object << "\n";
+        }
+        std::ostringstream prompt;
+        prompt << R"(
+            You are an expert CAD modeler organizing CAD files for an engineering database.
+            
+            Generate exactly 10 relevant tags for categorization and search filtering of this 3D CAD model.
+            
+            ### **File Metadata:**
+            - **Filepath:** )" << filepath << R"(
+            - **Title:** )" << metadata.title << R"(
+            - **Object Paths:**  
+        )" << objectPathsStream.str() << R"(
 
-    std::ostringstream prompt;
-    prompt << R"(
-        You are an expert CAD modeler organizing CAD files for an engineering database.
-        
-        Generate exactly 10 relevant tags for categorization and search filtering of this 3D CAD model.
-        
-        ### **File Metadata:**
-        - **Filepath:** )" << filepath << R"(
-        - **Title:** )" << metadata.title << R"(
-        - **Object Paths:**  
-    )" << objectPathsStream.str() << R"(
+            ### **Instructions:**
+            - **ONLY use words directly related to the object in the CAD model.**  
+            - **Do NOT include metadata like names, file paths, BRL-CAD, or dates.**  
+            - **Prioritize useful search terms for categorization (e.g., mechanical, architectural, vehicle, tool).**  
+            - **Infer object identity from file names, object names, and folder structure.**  
+            - **Do NOT make them generic (e.g., object, model, 3D).**
+            - **Do NOT assume additional details beyond what's in the metadata.**
+            - **Your output must be EXACTLY 10 single-word tags, one per line with no numbering or additional formatting.**
 
-        ### **Instructions:**
-        - **ONLY use words directly related to the object in the CAD model.**  
-        - **Do NOT include metadata like names, file paths, BRL-CAD, or dates.**  
-        - **Prioritize useful search terms for categorization (e.g., mechanical, architectural, vehicle, tool).**  
-        - **Infer object identity from file names, object names, and folder structure.**  
-        - **Do NOT make them generic (e.g., object, model, 3D).**
-        - **Do NOT assume additional details beyond what's in the metadata.**
-        - **Your output must be EXACTLY 10 single-word tags, one per line with no numbering or additional formatting.**
+            ### Example:
+            For a teapot model, appropriate tags would be:
+            Teapot
+            Container
+            Lid
+            Ceramic
+            Tableware
+            Kitchenware
+            Beverage
+            Drinking
+            Serving
+            Decorative
+        )";
 
-        ### Example:
-        For a teapot model, appropriate tags would be:
-        Teapot
-        Container
-        Lid
-        Ceramic
-        Tableware
-        Kitchenware
-        Beverage
-        Drinking
-        Serving
-        Decorative
-    )";
+        // Write the prompt to a temporary file.
+        std::ofstream promptFile("prompt.txt");
+        if (!promptFile.is_open()) {
+            std::cerr << "ERROR: Could not open prompt.txt for writing." << std::endl;
+            return false;
+        }
+        promptFile << prompt.str();
+        promptFile.close();
+        return true;
+        };
 
-    std::ofstream promptFile("prompt.txt");
-    promptFile << prompt.str();
-    promptFile.close();
+    // Run the blockingTask asynchronously.
+    QFuture<bool> future = QtConcurrent::run(blockingTask);
+    QFutureWatcher<bool>* watcher = new QFutureWatcher<bool>(this);
+    connect(watcher, &QFutureWatcher<bool>::finished, this, [this, watcher]() {
+        bool success = watcher->result();
+        watcher->deleteLater();
 
-    // Set up the QProcess
-    if (tagProcess) {
-        tagProcess->deleteLater();
-    }
-    tagProcess = new QProcess(this);
+        if (!success) {
+            // If the checks or prompt generation failed, emit an empty result.
+            emit tagsGenerated({});
+            return;
+        }
 
-    // Connect the finished signal to our slot.
-    connect(tagProcess, QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished),
-        this, &ModelTagging::onTagProcessFinished);
+        // Now that the blocking part is done, start the external command using QProcess.
+        if (tagProcess) {
+            tagProcess->deleteLater();
+        }
+        tagProcess = new QProcess(this);
+        connect(tagProcess, QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished),
+            this, &ModelTagging::onTagProcessFinished);
 
-    // Set up the process to run "ollama" with arguments.
-    tagProcess->setProgram("ollama");
-    tagProcess->setArguments(QStringList() << "run" << "llama3");
-    tagProcess->setStandardInputFile("prompt.txt");
-    tagProcess->setStandardOutputFile("temp_tags.txt");
+        tagProcess->setProgram("ollama");
+        tagProcess->setArguments(QStringList() << "run" << "llama3");
+        tagProcess->setStandardInputFile("prompt.txt");
+        tagProcess->setStandardOutputFile("temp_tags.txt");
 
-    // Start process
-    tagProcess->start();
+        tagProcess->start();
+     });
+
+    watcher->setFuture(future);
 }
 
 void ModelTagging::cancelTagGeneration() {
