@@ -48,6 +48,7 @@ ModelTagging::~ModelTagging(){
 }
 
 void ModelTagging::generateTags(const std::string& filepath) {
+	m_generationCanceled = false; // Reset the cancellation 
     auto blockingTask = [this, filepath]() -> bool {
         // Check if Ollama is available.
         if (!checkOllamaAvailability()) {
@@ -113,20 +114,23 @@ void ModelTagging::generateTags(const std::string& filepath) {
         return true;
         };
 
-    // Run the blockingTask asynchronously.
     QFuture<bool> future = QtConcurrent::run(blockingTask);
     QFutureWatcher<bool>* watcher = new QFutureWatcher<bool>(this);
     connect(watcher, &QFutureWatcher<bool>::finished, this, [this, watcher]() {
         bool success = watcher->result();
         watcher->deleteLater();
 
+        if (m_generationCanceled) {
+            qDebug() << "Generation was canceled during blocking tasks.";
+            emit tagGenerationCanceled();
+            return;
+        }
+
         if (!success) {
-            // If the checks or prompt generation failed, emit an empty result.
             emit tagsGenerated({});
             return;
         }
 
-        // Now that the blocking part is done, start the external command using QProcess.
         if (tagProcess) {
             tagProcess->deleteLater();
         }
@@ -146,9 +150,17 @@ void ModelTagging::generateTags(const std::string& filepath) {
 }
 
 void ModelTagging::cancelTagGeneration() {
+	m_generationCanceled = true;
     if (tagProcess && tagProcess->state() == QProcess::Running) {
-        tagProcess->kill();
-        qDebug() << "Tag generation canceled.";
+        tagProcess->terminate();
+        if (!tagProcess->waitForFinished(2000)) {
+            tagProcess->kill();
+        }
+        qDebug() << "Tag generation canceled (process killed).";
+        emit tagGenerationCanceled();
+    }
+    else {
+        qDebug() << "Tag generation canceled before process started.";
         emit tagGenerationCanceled();
     }
 }

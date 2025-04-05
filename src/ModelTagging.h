@@ -39,6 +39,7 @@ private:
     bool checkOllamaAvailability();
     bool checkModelAvailability(const std::string& modelName);
     std::string modelName = "llama3"; // default model name - change if needed
+	bool m_generationCanceled = false;
     ModelParser parser;
     QProcess* tagProcess = nullptr;
 };
