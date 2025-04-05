@@ -39,6 +39,7 @@ ModelView::ModelView(int modelId, Model* model, QWidget* parent)
   connect(ui.buttonBox->button(QDialogButtonBox::Ok), &QPushButton::clicked,
           this, &ModelView::onOkClicked);
   connect(ui.generateTagsButton, &QPushButton::clicked, this, &ModelView::onGenerateTagsClicked);
+  connect(ui.cancelTagButton, &QPushButton::clicked, this, &ModelView::onCancelTagGenerationClicked);
 
 }
 
@@ -155,6 +156,15 @@ void ModelView::onOkClicked() {
   }
 }
 
+void ModelView::onCancelTagGenerationClicked() {
+    CADventory* app = qobject_cast<CADventory*>(QCoreApplication::instance());
+    ModelTagging* modelTagging = app->getModelTagging();
+    modelTagging->cancelTagGeneration();  
+    ui.tagStatusLabel->setText("Tag generation canceled.");
+    ui.cancelTagButton->setVisible(false);
+    ui.generateTagsButton->setVisible(true);
+}
+
 void ModelView::onGenerateTagsClicked() {
     ui.tagStatusLabel->setText("Generating tags...");
     ui.generateTagsButton->setEnabled(false);
@@ -177,7 +187,6 @@ void ModelView::onGenerateTagsClicked() {
             for (const QString& tag : dummyTags) {
                 bool alreadyExists = false;
                 for (int i = 0; i < ui.tagsList->count(); ++i) {
-                    // You can directly get the text of the list item.
                     if (ui.tagsList->item(i)->text() == tag) {
                         alreadyExists = true;
                         break;

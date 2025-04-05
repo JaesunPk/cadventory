@@ -28,6 +28,7 @@ class ModelView : public QDialog {
   void onPropertyChanged(QListWidgetItem* item);
   void onOkClicked();
   void onGenerateTagsClicked();
+  void onCancelTagGenerationClicked();
 
  private:
   QFutureWatcher<std::vector<std::string>>* tagWatcher = nullptr;
