@@ -8,7 +8,7 @@ set(CMAKE_BUILD_WITH_INSTALL_RPATH TRUE)
 set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 set(CMAKE_VERBOSE_MAKEFILE ON)
 
-find_package(Qt6 REQUIRED COMPONENTS Core Widgets Gui)
+find_package(Qt6 REQUIRED COMPONENTS Core Widgets Gui Concurrent)
 qt_standard_project_setup()
 
 # Flag adjustments for Qt requirements
@@ -63,6 +63,7 @@ set(SRCS
   src/FileSystemFilterProxyModel.cpp
   src/ModelTagging.cpp
   src/ModelParser.cpp
+  src/executeCommand.cpp
 )
 
 set(UIS
@@ -91,6 +92,7 @@ set(HEADERS
   src/FileSystemFilterProxyModel.h
   src/ModelTagging.h
   src/ModelParser.h
+  src/executeCommand.h
   src/ModelMetadata.h
 )
 
@@ -107,11 +109,11 @@ qt_add_executable(cadventory WIN32
 target_include_directories(cadventory PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 
 if (DEFINED CADVENTORY_USE_SQLITE)
-  target_link_libraries(cadventory PRIVATE Qt6::Core Qt6::Widgets Qt6::Gui ${SQLITE_LIBRARY})
+  target_link_libraries(cadventory PRIVATE Qt6::Core Qt6::Widgets Qt6::Gui Qt6::Concurrent ${SQLITE_LIBRARY})
 else()
   target_include_directories(cadventory PRIVATE ${sqlite_INCLUDE_DIR})
   add_dependencies(cadventory sqlite_static)
-  target_link_libraries(cadventory PRIVATE Qt6::Core Qt6::Widgets Qt6::Gui sqlite_static)
+  target_link_libraries(cadventory PRIVATE Qt6::Core Qt6::Widgets Qt6::Gui Qt6::Concurrent sqlite_static)
 endif()
 
 # --- Begin BRL-CAD Configuration ---

@@ -78,6 +78,19 @@
 			 <string>Generate Tags</string>
 		 </property>
 	 </widget>
+   <widget class="QLabel" name="tagStatusLabel">
+     <property name="geometry">
+       <rect>
+         <x>550</x>
+         <y>562</y>
+         <width>200</width>
+         <height>16</height>
+       </rect>
+     </property>
+     <property name="text">
+       <string/>
+     </property>
+   </widget>
 
 	 <widget class="QLabel" name="tags">
    <property name="geometry">

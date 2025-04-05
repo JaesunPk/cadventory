@@ -11,6 +11,11 @@
 #include "CADventory.h"
 #include "ModelTagging.h"
 
+#include <QtConcurrent>     
+#include <QFuture>          
+#include <QFutureWatcher> 
+#include <QTimer>  
+
 ModelView::ModelView(int modelId, Model* model, QWidget* parent)
     : QDialog(parent), modelId(modelId), model(model) {
   ui.setupUi(this);
@@ -151,35 +156,59 @@ void ModelView::onOkClicked() {
 }
 
 void ModelView::onGenerateTagsClicked() {
+    ui.tagStatusLabel->setText("Generating tags...");
+    ui.generateTagsButton->setEnabled(false);
+
     // generate tags
 	CADventory* app = qobject_cast<CADventory*>(QCoreApplication::instance());
-	ModelTagging* modelTagging = app->getModelTagging();
-	//send filepath of model to generate tags
-	std::vector<std::string> tags = modelTagging->generateTags(currModel.file_path);
+    ModelTagging* modelTagging = app->getModelTagging();
+    QString filepath = QString::fromStdString(currModel.file_path);
 
-	// convert tags to QString
-    QStringList dummyTags;
+    // Create the QFutureWatcher if it doesn't exist already
+    if (!tagWatcher) {
+        tagWatcher = new QFutureWatcher<std::vector<std::string>>(this);
+        connect(tagWatcher, &QFutureWatcher<std::vector<std::string>>::finished, this, [=]() {
+            // Get the result from the background process
+            std::vector<std::string> tags = tagWatcher->result();
 
-	for (const std::string& tag : tags) {
-		dummyTags.append(QString::fromStdString(tag));
-	}
-
-    for (const QString& tag : dummyTags) {
-        // Avoid duplicates
-        bool alreadyExists = false;
-        for (int i = 0; i < ui.tagsList->count(); ++i) {
-            QWidget* widget = ui.tagsList->itemWidget(ui.tagsList->item(i));
-            QLabel* label = widget->findChild<QLabel*>();
-            if (label && label->text() == tag) {
-                alreadyExists = true;
-                break;
+            QStringList dummyTags;
+            for (const std::string& tag : tags) {
+                dummyTags.append(QString::fromStdString(tag));
             }
-        }
-        if (!alreadyExists) {
-            currModel.tags.push_back(tag.toStdString());
-            addTagItem(tag);
-        }
+
+            // Process and add the tags to the UI if they're not duplicates
+            for (const QString& tag : dummyTags) {
+                bool alreadyExists = false;
+                for (int i = 0; i < ui.tagsList->count(); ++i) {
+                    QWidget* widget = ui.tagsList->itemWidget(ui.tagsList->item(i));
+                    QLabel* label = widget->findChild<QLabel*>();
+                    if (label && label->text() == tag) {
+                        alreadyExists = true;
+                        break;
+                    }
+                }
+                if (!alreadyExists) {
+                    currModel.tags.push_back(tag.toStdString());
+                    addTagItem(tag);
+                }
+            }
+
+            // Update status and re-enable the button
+            ui.tagStatusLabel->setText("Tags generated!");
+            ui.generateTagsButton->setEnabled(true);
+
+            // Optional: Clear the status label after a short delay
+            QTimer::singleShot(3000, this, [=]() {
+                ui.tagStatusLabel->clear();
+                });
+            });
     }
+
+    // Run the generateTags function in a background thread
+    QFuture<std::vector<std::string>> future = QtConcurrent::run([=]() {
+        return modelTagging->generateTags(filepath.toStdString());
+        });
+    tagWatcher->setFuture(future);
 }
 
 

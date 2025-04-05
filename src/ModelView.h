@@ -2,6 +2,12 @@
 #define MODELVIEW_H
 
 #include <QDialog>
+#include <QFutureWatcher>    
+#include <vector>           
+#include <string>           
+#include <QMap>             
+#include <QStringList>      
+#include <QListWidgetItem>
 
 #include "Model.h"
 #include "GeometryBrowserDialog.h"
@@ -24,6 +30,7 @@ class ModelView : public QDialog {
   void onGenerateTagsClicked();
 
  private:
+  QFutureWatcher<std::vector<std::string>>* tagWatcher = nullptr;
   void loadPreviewImage();
   void populateProperties();
   void populateTags();
