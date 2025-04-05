@@ -164,25 +164,19 @@ void ModelView::onGenerateTagsClicked() {
     ModelTagging* modelTagging = app->getModelTagging();
     QString filepath = QString::fromStdString(currModel.file_path);
 
-    // Create the QFutureWatcher if it doesn't exist already
-    if (!tagWatcher) {
-        tagWatcher = new QFutureWatcher<std::vector<std::string>>(this);
-        connect(tagWatcher, &QFutureWatcher<std::vector<std::string>>::finished, this, [=]() {
-            // Get the result from the background process
-            std::vector<std::string> tags = tagWatcher->result();
-
+    connect(modelTagging, &ModelTagging::tagsGenerated, this,
+        [=](const std::vector<std::string>& tags) {
             QStringList dummyTags;
             for (const std::string& tag : tags) {
                 dummyTags.append(QString::fromStdString(tag));
             }
 
-            // Process and add the tags to the UI if they're not duplicates
+            // Add the tags to the UI (avoid duplicates)
             for (const QString& tag : dummyTags) {
                 bool alreadyExists = false;
                 for (int i = 0; i < ui.tagsList->count(); ++i) {
-                    QWidget* widget = ui.tagsList->itemWidget(ui.tagsList->item(i));
-                    QLabel* label = widget->findChild<QLabel*>();
-                    if (label && label->text() == tag) {
+                    // You can directly get the text of the list item.
+                    if (ui.tagsList->item(i)->text() == tag) {
                         alreadyExists = true;
                         break;
                     }
@@ -193,22 +187,14 @@ void ModelView::onGenerateTagsClicked() {
                 }
             }
 
-            // Update status and re-enable the button
             ui.tagStatusLabel->setText("Tags generated!");
             ui.generateTagsButton->setEnabled(true);
+            QTimer::singleShot(3000, this, [=]() { ui.tagStatusLabel->clear(); });
 
-            // Optional: Clear the status label after a short delay
-            QTimer::singleShot(3000, this, [=]() {
-                ui.tagStatusLabel->clear();
-                });
-            });
-    }
-
-    // Run the generateTags function in a background thread
-    QFuture<std::vector<std::string>> future = QtConcurrent::run([=]() {
-        return modelTagging->generateTags(filepath.toStdString());
+            disconnect(modelTagging, &ModelTagging::tagsGenerated, this, nullptr);
         });
-    tagWatcher->setFuture(future);
+
+    modelTagging->generateTags(filepath.toStdString());
 }
 
 

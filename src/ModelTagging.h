@@ -4,6 +4,9 @@
 #include <string>
 #include <vector>
 #include "ModelParser.h"
+#include <QProcess>
+#include <QObject>
+#include "ModelMetadata.h"
 
 /**
  * @brief main class for handling model tags.
@@ -15,19 +18,29 @@
  * How to use:
  * - simply create and instance of the class and call generateTags(std::string filepath) to generate the tags.
  */
-class ModelTagging {
+class ModelTagging : public QObject {
+    Q_OBJECT
 public:
     ModelTagging();
 
     ~ModelTagging();
 
-    std::vector<std::string> generateTags(std::string filepath);
+    void generateTags(const std::string& filepath);
+    void cancelTagGeneration();
+
+signals:
+    void tagsGenerated(const std::vector<std::string>& tags);
+    void tagGenerationCanceled();
+
+private slots:
+    void onTagProcessFinished(int exitCode, QProcess::ExitStatus exitStatus);
 
 private:
     bool checkOllamaAvailability();
     bool checkModelAvailability(const std::string& modelName);
     std::string modelName = "llama3"; // default model name - change if needed
     ModelParser parser;
+    QProcess* tagProcess = nullptr;
 };
 
 #endif // MODELTAGGING_H
