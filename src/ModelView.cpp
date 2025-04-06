@@ -11,6 +11,11 @@
 #include "CADventory.h"
 #include "ModelTagging.h"
 
+#include <QtConcurrent>     
+#include <QFuture>          
+#include <QFutureWatcher> 
+#include <QTimer>  
+
 ModelView::ModelView(int modelId, Model* model, QWidget* parent)
     : QDialog(parent), modelId(modelId), model(model) {
   ui.setupUi(this);
@@ -34,6 +39,7 @@ ModelView::ModelView(int modelId, Model* model, QWidget* parent)
   connect(ui.buttonBox->button(QDialogButtonBox::Ok), &QPushButton::clicked,
           this, &ModelView::onOkClicked);
   connect(ui.generateTagsButton, &QPushButton::clicked, this, &ModelView::onGenerateTagsClicked);
+  connect(ui.cancelTagButton, &QPushButton::clicked, this, &ModelView::onCancelTagGenerationClicked);
 
 }
 
@@ -150,36 +156,59 @@ void ModelView::onOkClicked() {
   }
 }
 
+void ModelView::onCancelTagGenerationClicked() {
+    CADventory* app = qobject_cast<CADventory*>(QCoreApplication::instance());
+    ModelTagging* modelTagging = app->getModelTagging();
+    modelTagging->cancelTagGeneration();  
+    ui.tagStatusLabel->setText("process canceled.");
+    ui.cancelTagButton->setVisible(false);
+	ui.generateTagsButton->setEnabled(true);
+    ui.generateTagsButton->setVisible(true);
+}
+
 void ModelView::onGenerateTagsClicked() {
+    ui.tagStatusLabel->setText("Generating tags...");
+    ui.generateTagsButton->setEnabled(false);
+    ui.generateTagsButton->setVisible(false);
+    ui.cancelTagButton->setVisible(true);
+
     // generate tags
 	CADventory* app = qobject_cast<CADventory*>(QCoreApplication::instance());
-	ModelTagging* modelTagging = app->getModelTagging();
-	//send filepath of model to generate tags
-	std::vector<std::string> tags = modelTagging->generateTags(currModel.file_path);
+    ModelTagging* modelTagging = app->getModelTagging();
+    QString filepath = QString::fromStdString(currModel.file_path);
 
-	// convert tags to QString
-    QStringList dummyTags;
-
-	for (const std::string& tag : tags) {
-		dummyTags.append(QString::fromStdString(tag));
-	}
-
-    for (const QString& tag : dummyTags) {
-        // Avoid duplicates
-        bool alreadyExists = false;
-        for (int i = 0; i < ui.tagsList->count(); ++i) {
-            QWidget* widget = ui.tagsList->itemWidget(ui.tagsList->item(i));
-            QLabel* label = widget->findChild<QLabel*>();
-            if (label && label->text() == tag) {
-                alreadyExists = true;
-                break;
+    connect(modelTagging, &ModelTagging::tagsGenerated, this,
+        [=](const std::vector<std::string>& tags) {
+            QStringList dummyTags;
+            for (const std::string& tag : tags) {
+                dummyTags.append(QString::fromStdString(tag));
             }
-        }
-        if (!alreadyExists) {
-            currModel.tags.push_back(tag.toStdString());
-            addTagItem(tag);
-        }
-    }
+
+            // Add the tags to the UI (avoid duplicates)
+            for (const QString& tag : dummyTags) {
+                bool alreadyExists = false;
+                for (int i = 0; i < ui.tagsList->count(); ++i) {
+                    if (ui.tagsList->item(i)->text() == tag) {
+                        alreadyExists = true;
+                        break;
+                    }
+                }
+                if (!alreadyExists) {
+                    currModel.tags.push_back(tag.toStdString());
+                    addTagItem(tag);
+                }
+            }
+
+            ui.tagStatusLabel->setText("Tags generated!");
+            ui.generateTagsButton->setEnabled(true);
+			ui.generateTagsButton->setVisible(true);
+			ui.cancelTagButton->setVisible(false);
+            QTimer::singleShot(3000, this, [=]() { ui.tagStatusLabel->clear(); });
+
+            disconnect(modelTagging, &ModelTagging::tagsGenerated, this, nullptr);
+        });
+
+    modelTagging->generateTags(filepath.toStdString());
 }
 
 

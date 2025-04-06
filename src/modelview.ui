@@ -78,6 +78,35 @@
 			 <string>Generate Tags</string>
 		 </property>
 	 </widget>
+   <widget class="QPushButton" name="cancelTagButton">
+     <property name="geometry">
+       <rect>
+         <x>421</x>
+         <y>560</y>
+         <width>111</width>
+         <height>24</height>
+       </rect>
+     </property>
+     <property name="text">
+       <string>Cancel Generation</string>
+     </property>
+     <property name="visible">
+       <bool>false</bool>
+     </property>
+   </widget>
+   <widget class="QLabel" name="tagStatusLabel">
+     <property name="geometry">
+       <rect>
+         <x>550</x>
+         <y>562</y>
+         <width>200</width>
+         <height>16</height>
+       </rect>
+     </property>
+     <property name="text">
+       <string/>
+     </property>
+   </widget>
 
 	 <widget class="QLabel" name="tags">
    <property name="geometry">
