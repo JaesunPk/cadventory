@@ -15,6 +15,7 @@
 #include <QFuture>          
 #include <QFutureWatcher> 
 #include <QTimer>  
+#include <QMessageBox>
 
 ModelView::ModelView(int modelId, Model* model, QWidget* parent)
     : QDialog(parent), modelId(modelId), model(model) {
@@ -167,15 +168,28 @@ void ModelView::onCancelTagGenerationClicked() {
 }
 
 void ModelView::onGenerateTagsClicked() {
-    ui.tagStatusLabel->setText("Generating tags...");
-    ui.generateTagsButton->setEnabled(false);
-    ui.generateTagsButton->setVisible(false);
-    ui.cancelTagButton->setVisible(true);
-
     // generate tags
 	CADventory* app = qobject_cast<CADventory*>(QCoreApplication::instance());
     ModelTagging* modelTagging = app->getModelTagging();
     QString filepath = QString::fromStdString(currModel.file_path);
+
+    //check for ollama
+    if (!modelTagging->checkOllamaAvailability()) {
+        QMessageBox::critical(this, "Missing Dependency", "Ollama is not installed or not available in PATH.\nPlease install Ollama to generate tags.");
+        return;
+    }
+
+    // Check for model availability
+    if (!modelTagging->checkModelAvailability("llama3")) {
+        QMessageBox::critical(this, "Missing Model", "The 'llama3' model is not available in Ollama.\nPlease pull the model using:\n\n    ollama pull llama3");
+        return;
+    }
+
+
+    ui.tagStatusLabel->setText("Generating tags...");
+    ui.generateTagsButton->setEnabled(false);
+    ui.generateTagsButton->setVisible(false);
+    ui.cancelTagButton->setVisible(true);
 
     connect(modelTagging, &ModelTagging::tagsGenerated, this,
         [=](const std::vector<std::string>& tags) {
