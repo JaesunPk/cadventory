@@ -40,6 +40,8 @@ private slots:
     void onGenerateReportButtonClicked();
     void on_backButton_clicked();
     void onGenerateAllTagsClicked();
+    void onPauseTagGenerationClicked();
+    void onCancelTagGenerationClicked();
 
     void onSettingsClicked(int modelId);
 

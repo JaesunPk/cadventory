@@ -177,6 +177,14 @@ void LibraryWindow::onTagsGeneratedFromBatch(const std::vector<std::string>& tag
     QTimer::singleShot(200, this, &LibraryWindow::processNextFile);
 }
 
+void LibraryWindow::onPauseTagGenerationClicked() {
+
+}
+
+void LibraryWindow::onCancelTagGenerationClicked() {
+
+} 
+
 void LibraryWindow::onGenerateAllTagsClicked() {
     // generates all tags for all models
     CADventory* app = qobject_cast<CADventory*>(QCoreApplication::instance());
@@ -310,6 +318,10 @@ void LibraryWindow::setupModelsAndViews() {
 }
 
 void LibraryWindow::setupConnections() {
+
+    ui.pauseButton->hide();
+    ui.cancelButton->hide();
+
     // Connect search input
     connect(ui.searchLineEdit, &QLineEdit::textChanged,
             this, &LibraryWindow::onSearchTextChanged);
@@ -338,6 +350,12 @@ void LibraryWindow::setupConnections() {
 	// Connect generate all tags button
 	connect(ui.generateAllTagsButton, &QPushButton::clicked,
 		this, &LibraryWindow::onGenerateAllTagsClicked);
+
+	// Connect pause/cancel tag generation buttons
+    connect(ui.pauseButton, &QPushButton::clicked,
+        this, &LibraryWindow::onPauseTagGenerationClicked);
+    connect(ui.cancelButton, &QPushButton::clicked,
+        this, &LibraryWindow::onCancelTagGenerationClicked);
 
 }
 

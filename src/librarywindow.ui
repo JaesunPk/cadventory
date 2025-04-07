@@ -239,6 +239,30 @@
                 </property>
               </widget>
             </item>
+            <item>
+              <widget class="QPushButton" name="pauseButton">
+                <property name="text">
+                  <string>Pause</string>
+                </property>
+                <property name="styleSheet">
+                  <string notr="true">
+                    padding: 4px 12px;
+                  </string>
+                </property>
+              </widget>
+            </item>
+            <item>
+              <widget class="QPushButton" name="cancelButton">
+                <property name="text">
+                  <string>Cancel</string>
+                </property>
+                <property name="styleSheet">
+                  <string notr="true">
+                    padding: 4px 12px;
+                  </string>
+                </property>
+              </widget>
+            </item>
           </layout>
          </item>
         </layout>
