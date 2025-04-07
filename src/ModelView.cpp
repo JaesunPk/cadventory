@@ -18,7 +18,11 @@ ModelView::ModelView(int modelId, Model* model, QWidget* parent)
   geometryBrowser->setWindowFlags(Qt::Widget);
   ui.geometryLayout->addWidget(geometryBrowser);
 
-  ui.modelName->setText(QString::fromStdString(currModel.short_name));
+  QString modelName = QString::fromStdString(currModel.short_name);
+  if (modelName.endsWith(".g")) {
+    modelName.chop(2);
+  }
+  ui.modelName->setText(modelName);
 
   loadPreviewImage();
   populateProperties();
