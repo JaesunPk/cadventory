@@ -42,6 +42,7 @@ private slots:
     void onGenerateAllTagsClicked();
     void onPauseTagGenerationClicked();
     void onCancelTagGenerationClicked();
+    void onResumeTagGenerationClicked();
 
     void onSettingsClicked(int modelId);
 
@@ -71,6 +72,7 @@ private:
     Model* model;
 
     bool canceled = false;
+    bool paused = false;
     std::vector<std::string> filesToTag;
     int currentFileIndex = -1;
 

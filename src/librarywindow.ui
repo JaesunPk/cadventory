@@ -252,6 +252,13 @@
               </widget>
             </item>
             <item>
+              <widget class="QPushButton" name="resumeButton">
+                <property name="text">
+                  <string>Resume</string>
+                </property>
+              </widget>
+            </item>
+            <item>
               <widget class="QPushButton" name="cancelButton">
                 <property name="text">
                   <string>Cancel</string>

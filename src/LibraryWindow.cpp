@@ -183,8 +183,22 @@ void LibraryWindow::onTagsGeneratedFromBatch(const std::vector<std::string>& tag
     QTimer::singleShot(200, this, &LibraryWindow::processNextFile);
 }
 
-void LibraryWindow::onPauseTagGenerationClicked() {
+void LibraryWindow::onResumeTagGenerationClicked() {
+    paused = false;
+    ui.resumeButton->hide();
+    ui.pauseButton->show();
+    ui.cancelButton->show();
 
+    ui.statusLabel->setText("Resuming tagging...");
+}
+
+void LibraryWindow::onPauseTagGenerationClicked() {
+    paused = true;
+
+    ui.pauseButton->hide();
+    ui.resumeButton->show();
+    ui.cancelButton->show();
+    ui.statusLabel->setText("Tag generation paused.");
 }
 
 void LibraryWindow::onCancelTagGenerationClicked() {
@@ -344,6 +358,7 @@ void LibraryWindow::setupConnections() {
 
     ui.pauseButton->hide();
     ui.cancelButton->hide();
+    ui.resumeButton->hide();
 
     // Connect search input
     connect(ui.searchLineEdit, &QLineEdit::textChanged,
@@ -374,12 +389,13 @@ void LibraryWindow::setupConnections() {
 	connect(ui.generateAllTagsButton, &QPushButton::clicked,
 		this, &LibraryWindow::onGenerateAllTagsClicked);
 
-	// Connect pause/cancel tag generation buttons
+	// Connect pause/cancel/resume tag generation buttons
     connect(ui.pauseButton, &QPushButton::clicked,
         this, &LibraryWindow::onPauseTagGenerationClicked);
     connect(ui.cancelButton, &QPushButton::clicked,
         this, &LibraryWindow::onCancelTagGenerationClicked);
-
+    connect(ui.resumeButton, &QPushButton::clicked,
+        this, &LibraryWindow::onResumeTagGenerationClicked);
 }
 
 void LibraryWindow::onSearchTextChanged(const QString& text) {
