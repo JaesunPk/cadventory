@@ -142,6 +142,10 @@ void LibraryWindow::processNextFile() {
 
         ui.pauseButton->hide();
         ui.cancelButton->hide();
+
+		currentFileIndex = -1;
+		canceled = false;
+		paused = false;
         return;
     }
 
@@ -185,6 +189,9 @@ void LibraryWindow::onTagsGeneratedFromBatch(const std::vector<std::string>& tag
 
 void LibraryWindow::onResumeTagGenerationClicked() {
     paused = false;
+
+	processNextFile();
+
     ui.resumeButton->hide();
     ui.pauseButton->show();
     ui.cancelButton->show();
@@ -194,6 +201,10 @@ void LibraryWindow::onResumeTagGenerationClicked() {
 
 void LibraryWindow::onPauseTagGenerationClicked() {
     paused = true;
+    
+    CADventory* app = qobject_cast<CADventory*>(QCoreApplication::instance());
+    ModelTagging* modelTagging = app->getModelTagging();
+    modelTagging->cancelTagGeneration();
 
     ui.pauseButton->hide();
     ui.resumeButton->show();
@@ -261,7 +272,10 @@ void LibraryWindow::onGenerateAllTagsClicked() {
     for (const auto& rel : relativePaths) {
         filesToTag.push_back(library->fullPath + "/" + rel);
     }
-    currentFileIndex = 0;
+
+    if (canceled || currentFileIndex <= 0) {
+        currentFileIndex = 0;
+    }
 
     static bool connectedOnce = false;
     if (!connectedOnce) {
