@@ -136,6 +136,12 @@ void LibraryWindow::processNextFile() {
     if (currentFileIndex >= static_cast<int>(filesToTag.size())) {
         ui.statusLabel->setText("Tagging complete!");
         ui.generateAllTagsButton->setEnabled(true);
+
+        ui.generateAllTagsButton->show();
+        ui.generateAllTagsButton->setEnabled(true);
+
+        ui.pauseButton->hide();
+        ui.cancelButton->hide();
         return;
     }
 
@@ -208,6 +214,12 @@ void LibraryWindow::onGenerateAllTagsClicked() {
 		QMessageBox::information(this, "No Models", "No models found in the library.");
 		return;
 	}
+
+    ui.generateAllTagsButton->setEnabled(false);
+    ui.generateAllTagsButton->hide();
+
+    ui.pauseButton->show();
+    ui.cancelButton->show();
 
     // debug print
 	qDebug() << "Generating tags for the following models:";
