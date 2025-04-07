@@ -20,6 +20,8 @@
 #include <QLineEdit>
 #include <QLabel>
 #include <QFileSystemWatcher>
+#include <QStandardItem>
+#include <QIcon>
 
 #include <iostream>
 #include <string>
@@ -34,8 +36,8 @@ LibraryWindow::LibraryWindow(QWidget* parent)
     mainWindow(nullptr),
     model(nullptr),
     availableModelsProxyModel(new ModelFilterProxyModel(this)),
-    selectedModelsProxyModel(new ModelFilterProxyModel(this)),
     modelCardDelegate(new ModelCardDelegate(this)),
+    explorerModel(new QStandardItemModel(this)),
     indexingThread(nullptr),
     indexingWorker(nullptr)
 {
@@ -76,27 +78,18 @@ void LibraryWindow::loadFromLibrary(Library* _library) {
     // Load models from the library
     model = library->model;
 
-    // Set the source model for proxy models
+    // Set the source model for proxy model
     availableModelsProxyModel->setSourceModel(model);
-    selectedModelsProxyModel->setSourceModel(model);
-
-    // Set initial filters
-    availableModelsProxyModel->setFilterRole(Model::IsSelectedRole);
-    availableModelsProxyModel->setFilterFixedString("0"); // Show unselected models
-
-    selectedModelsProxyModel->setFilterRole(Model::IsSelectedRole);
-    selectedModelsProxyModel->setFilterFixedString("1"); // Show selected models
 
     // Now that library is set, set up models and views
     setupModelsAndViews();
+    setupExplorerView();
 
     // Set up connections
     setupConnections();
 
     // Start indexing to process any already included but unprocessed models
     startIndexing();
-
-
 }
 
 void LibraryWindow::startIndexing() {
@@ -126,7 +119,6 @@ void LibraryWindow::startIndexing() {
     indexingThread->start();
 }
 
-
 void LibraryWindow::setMainWindow(MainWindow* mainWindow) {
     this->mainWindow = mainWindow;
     reload = new QAction(tr("&Reload"), this);
@@ -150,21 +142,6 @@ void LibraryWindow::setupModelsAndViews() {
 
     QSize itemSize = modelCardDelegate->sizeHint(QStyleOptionViewItem(), QModelIndex());
     ui.availableModelsView->setGridSize(QSize(0, itemSize.height()));
-
-    // Configure selected models view
-    ui.selectedModelsView->setModel(selectedModelsProxyModel);
-    ui.selectedModelsView->setItemDelegate(modelCardDelegate);
-    ui.selectedModelsView->setViewMode(QListView::ListMode);
-    ui.selectedModelsView->setFlow(QListView::TopToBottom);
-    ui.selectedModelsView->setWrapping(false);
-    ui.selectedModelsView->setResizeMode(QListView::Adjust);
-    ui.selectedModelsView->setSpacing(0);
-    ui.selectedModelsView->setUniformItemSizes(true);
-    ui.selectedModelsView->setSelectionMode(QAbstractItemView::NoSelection);
-    ui.selectedModelsView->setSelectionBehavior(QAbstractItemView::SelectRows);
-
-    // Set grid size for selected models view
-    ui.selectedModelsView->setGridSize(QSize(1, itemSize.height()));
 
     // Setup file system model with checkboxes
     QString libraryPath = QString::fromStdString(library->fullPath);
@@ -208,6 +185,128 @@ void LibraryWindow::setupModelsAndViews() {
             this, &LibraryWindow::onInclusionChanged);
 }
 
+void LibraryWindow::setupExplorerView() {
+    // Configure explorer models view
+    ui.explorerModelsView->setModel(explorerModel);
+    ui.explorerModelsView->setViewMode(QListView::ListMode);
+    ui.explorerModelsView->setFlow(QListView::TopToBottom);
+    ui.explorerModelsView->setWrapping(false);
+    ui.explorerModelsView->setResizeMode(QListView::Adjust);
+    ui.explorerModelsView->setSpacing(2);
+    ui.explorerModelsView->setUniformItemSizes(true);
+    ui.explorerModelsView->setSelectionMode(QAbstractItemView::NoSelection);
+    ui.explorerModelsView->setSelectionBehavior(QAbstractItemView::SelectRows);
+    
+    // Disable the default selection highlighting
+    ui.explorerModelsView->setStyleSheet("QListView::item:selected { background-color: transparent; }");
+    
+    // Set icon size
+    ui.explorerModelsView->setIconSize(QSize(16, 16));
+    
+    // Populate the explorer model with all models in the library
+    populateExplorerModel();
+}
+
+void LibraryWindow::populateExplorerModel() {
+    // Clear the model and the stored items
+    explorerModel->clear();
+    allExplorerItems.clear();
+    
+    // Set up headers
+    explorerModel->setHorizontalHeaderLabels(QStringList() << "Models");
+    
+    // Get all models from the library
+    for (int i = 0; i < model->rowCount(); ++i) {
+        QModelIndex index = model->index(i, 0);
+        
+        // Only include processed models
+        if (model->data(index, Model::IsProcessedRole).toBool() && 
+            model->data(index, Model::IsIncludedRole).toBool()) {
+            
+            // Get model data
+            int modelId = model->data(index, Model::IdRole).toInt();
+            QString shortName = model->data(index, Model::ShortNameRole).toString();
+            QString title = model->data(index, Model::TitleRole).toString();
+            bool isSelected = model->data(index, Model::IsSelectedRole).toBool();
+            
+            // Remove file extension from shortName if present
+            int dotIndex = shortName.lastIndexOf('.');
+            if (dotIndex > 0) {
+                shortName = shortName.left(dotIndex);
+            }
+            
+            // Create item
+            QStandardItem* item = new QStandardItem(shortName);
+            item->setData(modelId, Qt::UserRole); // Store model ID
+            item->setData(title, Qt::UserRole + 1); // Store title as tooltip
+            
+            // Set tooltip with title
+            item->setToolTip(title);
+            
+            // Set background color if selected
+            if (isSelected) {
+                QColor selectedColor = QColor(180, 180, 180); // Darker gray
+                item->setBackground(selectedColor);
+            } else {
+                // Ensure unselected items have transparent background
+                item->setBackground(Qt::transparent);
+            }
+            
+            // Add to model
+            explorerModel->appendRow(item);
+            
+            // Store the item for filtering
+            allExplorerItems.append(item);
+        }
+    }
+}
+
+void LibraryWindow::onExplorerModelClicked(const QModelIndex& index) {
+    // Get the model ID from the item data
+    int modelId = explorerModel->data(index, Qt::UserRole).toInt();
+    qDebug() << "Explorer model clicked:" << modelId;
+    
+    // Find the corresponding model in the main model
+    for (int i = 0; i < model->rowCount(); ++i) {
+        QModelIndex modelIndex = model->index(i, 0);
+        if (model->data(modelIndex, Model::IdRole).toInt() == modelId) {
+            // Toggle selection state
+            bool isSelected = model->data(modelIndex, Model::IsSelectedRole).toBool();
+            bool newSelectionState = !isSelected;
+            model->setData(modelIndex, newSelectionState, Model::IsSelectedRole);
+            
+            // Update the available models view to reflect the selection change
+            QModelIndex proxyIndex = availableModelsProxyModel->mapFromSource(modelIndex);
+            if (proxyIndex.isValid()) {
+                availableModelsProxyModel->dataChanged(proxyIndex, proxyIndex, {Model::IsSelectedRole});
+            }
+            
+            // Update the explorer view to highlight the selected item
+            QStandardItem* item = explorerModel->itemFromIndex(index);
+            if (item) {
+                // Set the background color based on selection state
+                if (newSelectionState) {
+                    // Selected
+                    QColor selectedColor = QColor(180, 180, 180); // Darker gray
+                    item->setBackground(selectedColor);
+                } else {
+                    // Deselected
+                    item->setBackground(Qt::transparent);
+                }
+                
+                // Update the view to reflect the change
+                explorerModel->dataChanged(index, index, {Qt::BackgroundRole});
+            }
+            break;
+        }
+    }
+}
+
+void LibraryWindow::onExplorerModelDoubleClicked(const QModelIndex& index) {
+    // Just call the click handler to select the model
+    onExplorerModelClicked(index);
+}
+
 void LibraryWindow::setupConnections() {
     // Connect search input
     connect(ui.searchLineEdit, &QLineEdit::textChanged,
@@ -219,10 +318,6 @@ void LibraryWindow::setupConnections() {
     connect(ui.availableModelsView, &QListView::clicked,
             this, &LibraryWindow::onAvailableModelClicked);
 
-    // Connect clicks on selected models
-    connect(ui.selectedModelsView, &QListView::clicked,
-            this, &LibraryWindow::onSelectedModelClicked);
-
     // Connect Generate Report button
     connect(ui.generateReportButton, &QPushButton::clicked,
             this, &LibraryWindow::onGenerateReportButtonClicked);
@@ -233,7 +328,12 @@ void LibraryWindow::setupConnections() {
 
     connect(modelCardDelegate, &ModelCardDelegate::modelViewClicked,
             this, &LibraryWindow::onModelViewClicked);
-
+            
+    // Connect explorer view signals
+    connect(ui.explorerModelsView, &QListView::clicked,
+            this, &LibraryWindow::onExplorerModelClicked);
+    connect(ui.explorerModelsView, &QListView::doubleClicked,
+            this, &LibraryWindow::onExplorerModelDoubleClicked);
 }
 
 void LibraryWindow::onSearchTextChanged(const QString& text) {
@@ -252,28 +352,41 @@ void LibraryWindow::onSearchFieldChanged(const QString& field) {
     availableModelsProxyModel->invalidate();
 }
 
-
-
 void LibraryWindow::onAvailableModelClicked(const QModelIndex& index) {
     // Toggle selection state
     QModelIndex sourceIndex = availableModelsProxyModel->mapToSource(index);
     bool isSelected = model->data(sourceIndex, Model::IsSelectedRole).toBool();
-    model->setData(sourceIndex, !isSelected, Model::IsSelectedRole);
+    bool newSelectionState = !isSelected;
+    model->setData(sourceIndex, newSelectionState, Model::IsSelectedRole);
 
-    // Update filters
-    availableModelsProxyModel->invalidate();
-    selectedModelsProxyModel->invalidate();
-}
-
-void LibraryWindow::onSelectedModelClicked(const QModelIndex& index) {
-    // Toggle selection state
-    QModelIndex sourceIndex = selectedModelsProxyModel->mapToSource(index);
-    bool isSelected = model->data(sourceIndex, Model::IsSelectedRole).toBool();
-    model->setData(sourceIndex, !isSelected, Model::IsSelectedRole);
-
-    // Update filters
-    availableModelsProxyModel->invalidate();
-    selectedModelsProxyModel->invalidate();
+    // Update the view to reflect the selection change
+    availableModelsProxyModel->dataChanged(index, index, {Model::IsSelectedRole});
+    
+    // Get the model ID
+    int modelId = model->data(sourceIndex, Model::IdRole).toInt();
+    
+    // Update the explorer view to highlight the selected item
+    for (int i = 0; i < explorerModel->rowCount(); ++i) {
+        QModelIndex explorerIndex = explorerModel->index(i, 0);
+        if (explorerModel->data(explorerIndex, Qt::UserRole).toInt() == modelId) {
+            QStandardItem* item = explorerModel->itemFromIndex(explorerIndex);
+            if (item) {
+                // Set the background color based on selection state
+                if (newSelectionState) {
+                    // Selected
+                    QColor selectedColor = QColor(180, 180, 180); // Darker gray
+                    item->setBackground(selectedColor);
+                } else {
+                    // Deselected
+                    item->setBackground(Qt::transparent);
+                }
+                
+                // Update the view to reflect the change
+                explorerModel->dataChanged(explorerIndex, explorerIndex, {Qt::BackgroundRole});
+            }
+            break;
+        }
+    }
 }
 
 void LibraryWindow::onGenerateReportButtonClicked() {
@@ -298,7 +411,9 @@ void LibraryWindow::onModelProcessed(int modelId) {
     Q_UNUSED(modelId);
     model->refreshModelData();
     availableModelsProxyModel->invalidate();
-    selectedModelsProxyModel->invalidate();
+    
+    // Update explorer model
+    populateExplorerModel();
 }
 
 void LibraryWindow::on_backButton_clicked() {
@@ -343,7 +458,6 @@ void LibraryWindow::reloadLibrary() {
                 model->resetDatabase();
                 model->refreshModelData();
                 availableModelsProxyModel->invalidate();
-                selectedModelsProxyModel->invalidate();
                 fileSystemModel->refresh(); // Custom method to refresh the model
                 this->loadFromLibrary(library);
 
@@ -352,14 +466,13 @@ void LibraryWindow::reloadLibrary() {
         }
     } else {
         std::cout << "'.cadventory' does not exist." << std::endl;
+    }
 }
 
-}
 void LibraryWindow::onModelViewClicked(int modelId) {
     qDebug() << "Model view clicked for model ID:" << modelId;
     ModelView* modelView = new ModelView(modelId, model, this);
     modelView->exec();
-
 }
 
 void LibraryWindow::onGeometryBrowserClicked(int modelId) {
@@ -384,12 +497,13 @@ void LibraryWindow::onProgressUpdated(const QString& currentObject, int percenta
 void LibraryWindow::onInclusionChanged(const QModelIndex& index, bool /*included*/) {
     Q_UNUSED(index);
     availableModelsProxyModel->invalidate();
-    selectedModelsProxyModel->invalidate();
 
     startIndexing();
     model->refreshModelData();
+    
+    // Update explorer model
+    populateExplorerModel();
 }
-
 
 void LibraryWindow::onIndexingComplete() {
     qDebug() << "Indexing complete";
@@ -399,7 +513,9 @@ void LibraryWindow::onIndexingComplete() {
     // Refresh model data
     model->refreshModelData();
     availableModelsProxyModel->invalidate();
-    selectedModelsProxyModel->invalidate();
+    
+    // Update explorer model
+    populateExplorerModel();
 
     // Update filesystem view checkboxes
     fileSystemModel->dataChanged(fileSystemModel->index(0, 0),

@@ -8,6 +8,7 @@
 #include <QLineEdit>
 #include <QSortFilterProxyModel>
 #include <QThread>
+#include <QStandardItemModel>
 
 #include "ui_librarywindow.h"
 #include "Library.h"
@@ -36,7 +37,6 @@ private slots:
     void onSearchTextChanged(const QString& text);
     void onSearchFieldChanged(const QString& field);
     void onAvailableModelClicked(const QModelIndex& index);
-    void onSelectedModelClicked(const QModelIndex& index);
     void onGenerateReportButtonClicked();
     void on_backButton_clicked();
 
@@ -44,6 +44,10 @@ private slots:
 
     void onGeometryBrowserClicked(int modelId);
     void onModelViewClicked(int modelId);
+    
+    // New slots for explorer view
+    void onExplorerModelClicked(const QModelIndex& index);
+    void onExplorerModelDoubleClicked(const QModelIndex& index);
 
     void startIndexing();
     void onModelProcessed(int modelId);
@@ -57,6 +61,8 @@ private slots:
 private:
     void setupModelsAndViews();
     void setupConnections();
+    void setupExplorerView();
+    void populateExplorerModel();
 
     Library* library;
     MainWindow* mainWindow;
@@ -65,9 +71,11 @@ private:
     Model* model;
 
     ModelFilterProxyModel* availableModelsProxyModel;
-    ModelFilterProxyModel* selectedModelsProxyModel;
-
     ModelCardDelegate* modelCardDelegate;
+    
+    // New model for explorer view
+    QStandardItemModel* explorerModel;
+    QList<QStandardItem*> allExplorerItems; // Store all items for filtering
 
     QList<int> selectedModelIds;
 
