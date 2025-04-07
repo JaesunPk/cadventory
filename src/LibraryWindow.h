@@ -70,6 +70,7 @@ private:
     Ui::LibraryWindow ui;
     Model* model;
 
+    bool canceled = false;
     std::vector<std::string> filesToTag;
     int currentFileIndex = -1;
 

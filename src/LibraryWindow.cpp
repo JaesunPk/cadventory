@@ -188,7 +188,18 @@ void LibraryWindow::onPauseTagGenerationClicked() {
 }
 
 void LibraryWindow::onCancelTagGenerationClicked() {
+    canceled = true;
 
+	// kill any QProcess that is running
+    CADventory* app = qobject_cast<CADventory*>(QCoreApplication::instance());
+    ModelTagging* modelTagging = app->getModelTagging();
+    modelTagging->cancelTagGeneration();
+
+    ui.pauseButton->hide();
+    ui.cancelButton->hide();
+    ui.generateAllTagsButton->show();
+    ui.generateAllTagsButton->setEnabled(true);
+    ui.statusLabel->setText("Tag generation canceled.");
 } 
 
 void LibraryWindow::onGenerateAllTagsClicked() {
