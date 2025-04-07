@@ -150,7 +150,6 @@ void LibraryWindow::processNextFile() {
     }
 
     std::string filepath = filesToTag[currentFileIndex];
-    currentFileIndex++;
 
     qDebug() << "Processing file:" << QString::fromStdString(filepath);
 
@@ -160,7 +159,7 @@ void LibraryWindow::processNextFile() {
 }
 
 void LibraryWindow::onTagsGeneratedFromBatch(const std::vector<std::string>& tags) {
-    int fileIndex = currentFileIndex - 1;
+    int fileIndex = currentFileIndex;
     if (fileIndex < 0 || fileIndex >= (int)filesToTag.size()) {
         return;
     }
@@ -183,6 +182,8 @@ void LibraryWindow::onTagsGeneratedFromBatch(const std::vector<std::string>& tag
     ui.statusLabel->setText(QString("Processed %1/%2")
         .arg(progress)
         .arg(ui.progressBar->maximum()));
+
+    currentFileIndex++;
 
     QTimer::singleShot(200, this, &LibraryWindow::processNextFile);
 }
