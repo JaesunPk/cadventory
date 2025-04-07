@@ -166,6 +166,8 @@ void ModelTagging::cancelTagGeneration() {
 }
 
 void ModelTagging::onTagProcessFinished(int exitCode, QProcess::ExitStatus exitStatus) {
+    qDebug() << "[ModelTagging] onTagProcessFinished: exitCode=" << exitCode
+        << "exitStatus=" << exitStatus;
     Q_UNUSED(exitCode);
     Q_UNUSED(exitStatus);
 
@@ -174,6 +176,10 @@ void ModelTagging::onTagProcessFinished(int exitCode, QProcess::ExitStatus exitS
     std::string content((std::istreambuf_iterator<char>(file)),
         std::istreambuf_iterator<char>());
     file.close();
+    content = std::regex_replace(content, std::regex(R"(\*\*)"), "");
+
+    qDebug() << "[DEBUG] temp_tags.txt content for chessboard.g:\n"
+        << QString::fromStdString(content);
 
     std::regex tagPattern(R"((?:^|\n)([A-Za-z]+)(?:\n|$))");
     std::sregex_iterator it(content.begin(), content.end(), tagPattern);
@@ -205,7 +211,12 @@ void ModelTagging::onTagProcessFinished(int exitCode, QProcess::ExitStatus exitS
     std::remove("temp_tags.txt");
 
     // Emit the signal with the generated tags.
+
+
     emit tagsGenerated(tags);
+
+    qDebug() << "[ModelTagging] tagsGenerated signal emitted with "
+        << tags.size() << "tags";
 
     tagProcess->deleteLater();
     tagProcess = nullptr;

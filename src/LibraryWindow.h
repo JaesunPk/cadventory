@@ -59,11 +59,17 @@ private:
     void setupModelsAndViews();
     void setupConnections();
 
+    void processNextFile();
+    void onTagsGeneratedFromBatch(const std::vector<std::string>& tags);
+
     Library* library;
     MainWindow* mainWindow;
     QAction* reload;
     Ui::LibraryWindow ui;
     Model* model;
+
+    std::vector<std::string> filesToTag;
+    int currentFileIndex = -1;
 
     ModelFilterProxyModel* availableModelsProxyModel;
     ModelFilterProxyModel* selectedModelsProxyModel;

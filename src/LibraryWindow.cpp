@@ -132,6 +132,51 @@ void LibraryWindow::startIndexing() {
     indexingThread->start();
 }
 
+void LibraryWindow::processNextFile() {
+    if (currentFileIndex >= static_cast<int>(filesToTag.size())) {
+        ui.statusLabel->setText("Tagging complete!");
+        ui.generateAllTagsButton->setEnabled(true);
+        return;
+    }
+
+    std::string filepath = filesToTag[currentFileIndex];
+    currentFileIndex++;
+
+    qDebug() << "Processing file:" << QString::fromStdString(filepath);
+
+    CADventory* app = qobject_cast<CADventory*>(QCoreApplication::instance());
+    ModelTagging* modelTagging = app->getModelTagging();
+    modelTagging->generateTags(filepath);
+}
+
+void LibraryWindow::onTagsGeneratedFromBatch(const std::vector<std::string>& tags) {
+    int fileIndex = currentFileIndex - 1;
+    if (fileIndex < 0 || fileIndex >= (int)filesToTag.size()) {
+        return;
+    }
+    std::string filepath = filesToTag[fileIndex];
+
+    ModelData data = model->getModelByFilePath(filepath);
+    int modelId = data.id;
+    if (modelId != -1) {
+        std::vector<std::string> existingTags = model->getTagsForModel(modelId);
+        std::set<std::string> existing(existingTags.begin(), existingTags.end());
+        for (const auto& tag : tags) {
+            if (existing.find(tag) == existing.end()) {
+                model->addTagToModel(modelId, tag);
+            }
+        }
+    }
+
+    int progress = ui.progressBar->value() + 1;
+    ui.progressBar->setValue(progress);
+    ui.statusLabel->setText(QString("Processed %1/%2")
+        .arg(progress)
+        .arg(ui.progressBar->maximum()));
+
+    QTimer::singleShot(200, this, &LibraryWindow::processNextFile);
+}
+
 void LibraryWindow::onGenerateAllTagsClicked() {
     // generates all tags for all models
     CADventory* app = qobject_cast<CADventory*>(QCoreApplication::instance());
@@ -162,61 +207,25 @@ void LibraryWindow::onGenerateAllTagsClicked() {
 		qDebug() << QString::fromStdString(rel);
 	}
 
-    std::queue<std::string> tagQueue;
-    for (const std::string& rel : relativePaths) {
-        std::string fullPath = library->fullPath + "/" + rel;
-        tagQueue.push(fullPath);
-    }
-
-    ui.progressBar->setMaximum(static_cast<int>(tagQueue.size()));
+    ui.progressBar->setMaximum(static_cast<int>(relativePaths.size()));
     ui.progressBar->setValue(0);
     ui.statusLabel->setText("Generating tags...");
-	ui.generateAllTagsButton->setEnabled(false);
+    ui.generateAllTagsButton->setEnabled(false);
 
-    auto processNext = new std::function<void()>;
-    *processNext = [=]() mutable {
-        if (tagQueue.empty()) {
-            ui.statusLabel->setText("Tagging complete.");
-            ui.generateAllTagsButton->setEnabled(true);
-            delete processNext;
-            return;
-        }
+    filesToTag.clear();
+    for (const auto& rel : relativePaths) {
+        filesToTag.push_back(library->fullPath + "/" + rel);
+    }
+    currentFileIndex = 0;
 
-        std::string filepath = tagQueue.front();
-        tagQueue.pop();
-        qDebug() << "Processing file:" << QString::fromStdString(filepath);
+    static bool connectedOnce = false;
+    if (!connectedOnce) {
+        connect(modelTagging, &ModelTagging::tagsGenerated,
+            this, &LibraryWindow::onTagsGeneratedFromBatch);
+        connectedOnce = true;
+    }
 
-        // Use scoped connection
-        QMetaObject::Connection* connection = new QMetaObject::Connection;
-
-        *connection = connect(modelTagging, &ModelTagging::tagsGenerated, this,
-            [=](const std::vector<std::string>& tags) {
-                // Persist tags
-                ModelData data = model->getModelByFilePath(filepath);
-				int modelId = data.id;
-                if (modelId != -1) {
-                    std::vector<std::string> currentTags = model->getTagsForModel(modelId);
-                    std::set<std::string> existing(currentTags.begin(), currentTags.end());
-                    for (const std::string& tag : tags) {
-                        if (existing.find(tag) == existing.end()) {
-                            model->addTagToModel(modelId, tag);
-                        }
-                    }
-                }
-
-                int progress = ui.progressBar->value() + 1;
-                ui.progressBar->setValue(progress);
-                ui.statusLabel->setText(QString("Processed %1/%2").arg(progress).arg(ui.progressBar->maximum()));
-
-                disconnect(*connection); // Clean up
-                delete connection;
-                QTimer::singleShot(100, this, *processNext);
-            });
-
-        modelTagging->generateTags(filepath);
-        };
-
-    (*processNext)();
+    processNextFile();
 }
 
 void LibraryWindow::setMainWindow(MainWindow* mainWindow) {
