@@ -185,7 +185,6 @@ void ModelView::onGenerateTagsClicked() {
         return;
     }
 
-
     ui.tagStatusLabel->setText("Generating tags...");
     ui.generateTagsButton->setEnabled(false);
     ui.generateTagsButton->setVisible(false);

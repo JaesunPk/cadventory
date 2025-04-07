@@ -39,6 +39,7 @@ private slots:
     void onSelectedModelClicked(const QModelIndex& index);
     void onGenerateReportButtonClicked();
     void on_backButton_clicked();
+    void onGenerateAllTagsClicked();
 
     void onSettingsClicked(int modelId);
 

@@ -20,11 +20,17 @@
 #include <QLineEdit>
 #include <QLabel>
 #include <QFileSystemWatcher>
+#include <QTimer>
+#include <QDebug>
 
 #include <iostream>
 #include <string>
 #include <vector>
 #include <filesystem>
+#include <set>
+
+#include "CADventory.h"
+#include "ModelTagging.h"
 
 namespace fs = std::filesystem;
 
@@ -126,6 +132,92 @@ void LibraryWindow::startIndexing() {
     indexingThread->start();
 }
 
+void LibraryWindow::onGenerateAllTagsClicked() {
+    // generates all tags for all models
+    CADventory* app = qobject_cast<CADventory*>(QCoreApplication::instance());
+    ModelTagging* modelTagging = app->getModelTagging();
+
+    // dependency check
+    if (!modelTagging->checkOllamaAvailability()) {
+        QMessageBox::critical(this, "Missing Dependency", "Ollama is not installed or not available in PATH.");
+        return;
+    }
+
+    if (!modelTagging->checkModelAvailability("llama3")) {
+        QMessageBox::critical(this, "Missing Model", "The 'llama3' model is not available.\nRun: `ollama pull llama3`.");
+        return;
+    }
+
+    // get all the paths
+    std::vector<std::string> relativePaths = library->getModels();
+
+	if (relativePaths.empty()) {
+		QMessageBox::information(this, "No Models", "No models found in the library.");
+		return;
+	}
+
+    // debug print
+	qDebug() << "Generating tags for the following models:";
+	for (const std::string& rel : relativePaths) {
+		qDebug() << QString::fromStdString(rel);
+	}
+
+    std::queue<std::string> tagQueue;
+    for (const std::string& rel : relativePaths) {
+        std::string fullPath = library->fullPath + "/" + rel;
+        tagQueue.push(fullPath);
+    }
+
+    ui.progressBar->setMaximum(static_cast<int>(tagQueue.size()));
+    ui.progressBar->setValue(0);
+    ui.statusLabel->setText("Generating tags...");
+	ui.generateAllTagsButton->setEnabled(false);
+
+    auto processNext = new std::function<void()>;
+    *processNext = [=]() mutable {
+        if (tagQueue.empty()) {
+            ui.statusLabel->setText("Tagging complete.");
+            ui.generateAllTagsButton->setEnabled(true);
+            delete processNext;
+            return;
+        }
+
+        std::string filepath = tagQueue.front();
+        tagQueue.pop();
+        qDebug() << "Processing file:" << QString::fromStdString(filepath);
+
+        // Use scoped connection
+        QMetaObject::Connection* connection = new QMetaObject::Connection;
+
+        *connection = connect(modelTagging, &ModelTagging::tagsGenerated, this,
+            [=](const std::vector<std::string>& tags) {
+                // Persist tags
+                ModelData data = model->getModelByFilePath(filepath);
+				int modelId = data.id;
+                if (modelId != -1) {
+                    std::vector<std::string> currentTags = model->getTagsForModel(modelId);
+                    std::set<std::string> existing(currentTags.begin(), currentTags.end());
+                    for (const std::string& tag : tags) {
+                        if (existing.find(tag) == existing.end()) {
+                            model->addTagToModel(modelId, tag);
+                        }
+                    }
+                }
+
+                int progress = ui.progressBar->value() + 1;
+                ui.progressBar->setValue(progress);
+                ui.statusLabel->setText(QString("Processed %1/%2").arg(progress).arg(ui.progressBar->maximum()));
+
+                disconnect(*connection); // Clean up
+                delete connection;
+                QTimer::singleShot(100, this, *processNext);
+            });
+
+        modelTagging->generateTags(filepath);
+        };
+
+    (*processNext)();
+}
 
 void LibraryWindow::setMainWindow(MainWindow* mainWindow) {
     this->mainWindow = mainWindow;
@@ -233,6 +325,10 @@ void LibraryWindow::setupConnections() {
 
     connect(modelCardDelegate, &ModelCardDelegate::modelViewClicked,
             this, &LibraryWindow::onModelViewClicked);
+
+	// Connect generate all tags button
+	connect(ui.generateAllTagsButton, &QPushButton::clicked,
+		this, &LibraryWindow::onGenerateAllTagsClicked);
 
 }
 
