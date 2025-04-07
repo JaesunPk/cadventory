@@ -27,7 +27,8 @@ public:
 
     void generateTags(const std::string& filepath);
     void cancelTagGeneration();
-
+    bool checkOllamaAvailability();
+    bool checkModelAvailability(const std::string& modelName);
 signals:
     void tagsGenerated(const std::vector<std::string>& tags);
     void tagGenerationCanceled();
@@ -36,8 +37,6 @@ private slots:
     void onTagProcessFinished(int exitCode, QProcess::ExitStatus exitStatus);
 
 private:
-    bool checkOllamaAvailability();
-    bool checkModelAvailability(const std::string& modelName);
     std::string modelName = "llama3"; // default model name - change if needed
 	bool m_generationCanceled = false;
     ModelParser parser;

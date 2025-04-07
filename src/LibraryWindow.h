@@ -39,6 +39,10 @@ private slots:
     void onSelectedModelClicked(const QModelIndex& index);
     void onGenerateReportButtonClicked();
     void on_backButton_clicked();
+    void onGenerateAllTagsClicked();
+    void onPauseTagGenerationClicked();
+    void onCancelTagGenerationClicked();
+    void onResumeTagGenerationClicked();
 
     void onSettingsClicked(int modelId);
 
@@ -58,11 +62,19 @@ private:
     void setupModelsAndViews();
     void setupConnections();
 
+    void processNextFile();
+    void onTagsGeneratedFromBatch(const std::vector<std::string>& tags);
+
     Library* library;
     MainWindow* mainWindow;
     QAction* reload;
     Ui::LibraryWindow ui;
     Model* model;
+
+    bool canceled = false;
+    bool paused = false;
+    std::vector<std::string> filesToTag;
+    int currentFileIndex = -1;
 
     ModelFilterProxyModel* availableModelsProxyModel;
     ModelFilterProxyModel* selectedModelsProxyModel;
