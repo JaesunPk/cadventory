@@ -2,6 +2,12 @@
 #define MODELVIEW_H
 
 #include <QDialog>
+#include <QFutureWatcher>    
+#include <vector>           
+#include <string>           
+#include <QMap>             
+#include <QStringList>      
+#include <QListWidgetItem>
 
 #include "Model.h"
 #include "GeometryBrowserDialog.h"
@@ -21,8 +27,11 @@ class ModelView : public QDialog {
   void onRemoveTagClicked(QListWidgetItem* item);
   void onPropertyChanged(QListWidgetItem* item);
   void onOkClicked();
+  void onGenerateTagsClicked();
+  void onCancelTagGenerationClicked();
 
  private:
+  QFutureWatcher<std::vector<std::string>>* tagWatcher = nullptr;
   void loadPreviewImage();
   void populateProperties();
   void populateTags();

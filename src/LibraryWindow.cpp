@@ -22,11 +22,17 @@
 #include <QFileSystemWatcher>
 #include <QStandardItem>
 #include <QIcon>
+#include <QTimer>
+#include <QDebug>
 
 #include <iostream>
 #include <string>
 #include <vector>
 #include <filesystem>
+#include <set>
+
+#include "CADventory.h"
+#include "ModelTagging.h"
 
 namespace fs = std::filesystem;
 
@@ -117,6 +123,162 @@ void LibraryWindow::startIndexing() {
 
     // Start the indexing thread
     indexingThread->start();
+}
+
+void LibraryWindow::processNextFile() {
+    if (currentFileIndex >= static_cast<int>(filesToTag.size())) {
+        ui.statusLabel->setText("Tagging complete!");
+        ui.generateAllTagsButton->setEnabled(true);
+
+        ui.generateAllTagsButton->show();
+        ui.generateAllTagsButton->setEnabled(true);
+
+        ui.pauseButton->hide();
+        ui.cancelButton->hide();
+
+		currentFileIndex = -1;
+		canceled = false;
+		paused = false;
+        return;
+    }
+
+    std::string filepath = filesToTag[currentFileIndex];
+
+    qDebug() << "Processing file:" << QString::fromStdString(filepath);
+
+    CADventory* app = qobject_cast<CADventory*>(QCoreApplication::instance());
+    ModelTagging* modelTagging = app->getModelTagging();
+    modelTagging->generateTags(filepath);
+}
+
+void LibraryWindow::onTagsGeneratedFromBatch(const std::vector<std::string>& tags) {
+    int fileIndex = currentFileIndex;
+    if (fileIndex < 0 || fileIndex >= (int)filesToTag.size()) {
+        return;
+    }
+    std::string filepath = filesToTag[fileIndex];
+
+    ModelData data = model->getModelByFilePath(filepath);
+    int modelId = data.id;
+    if (modelId != -1) {
+        std::vector<std::string> existingTags = model->getTagsForModel(modelId);
+        std::set<std::string> existing(existingTags.begin(), existingTags.end());
+        for (const auto& tag : tags) {
+            if (existing.find(tag) == existing.end()) {
+                model->addTagToModel(modelId, tag);
+            }
+        }
+    }
+
+    int progress = ui.progressBar->value() + 1;
+    ui.progressBar->setValue(progress);
+    ui.statusLabel->setText(QString("Processed %1/%2")
+        .arg(progress)
+        .arg(ui.progressBar->maximum()));
+
+    currentFileIndex++;
+
+    QTimer::singleShot(200, this, &LibraryWindow::processNextFile);
+}
+
+void LibraryWindow::onResumeTagGenerationClicked() {
+    paused = false;
+
+	processNextFile();
+
+    ui.resumeButton->hide();
+    ui.pauseButton->show();
+    ui.cancelButton->show();
+
+    ui.statusLabel->setText("Resuming tagging...");
+}
+
+void LibraryWindow::onPauseTagGenerationClicked() {
+    paused = true;
+    
+    CADventory* app = qobject_cast<CADventory*>(QCoreApplication::instance());
+    ModelTagging* modelTagging = app->getModelTagging();
+    modelTagging->cancelTagGeneration();
+
+    ui.pauseButton->hide();
+    ui.resumeButton->show();
+    ui.cancelButton->show();
+    ui.statusLabel->setText("Tag generation paused.");
+}
+
+void LibraryWindow::onCancelTagGenerationClicked() {
+    canceled = true;
+
+	// kill any QProcess that is running
+    CADventory* app = qobject_cast<CADventory*>(QCoreApplication::instance());
+    ModelTagging* modelTagging = app->getModelTagging();
+    modelTagging->cancelTagGeneration();
+
+    ui.pauseButton->hide();
+    ui.cancelButton->hide();
+    ui.generateAllTagsButton->show();
+    ui.generateAllTagsButton->setEnabled(true);
+    ui.statusLabel->setText("Tag generation canceled.");
+} 
+
+void LibraryWindow::onGenerateAllTagsClicked() {
+    // generates all tags for all models
+    CADventory* app = qobject_cast<CADventory*>(QCoreApplication::instance());
+    ModelTagging* modelTagging = app->getModelTagging();
+
+    // dependency check
+    if (!modelTagging->checkOllamaAvailability()) {
+        QMessageBox::critical(this, "Missing Dependency", "Ollama is not installed or not available in PATH.");
+        return;
+    }
+
+    if (!modelTagging->checkModelAvailability("llama3")) {
+        QMessageBox::critical(this, "Missing Model", "The 'llama3' model is not available.\nRun: `ollama pull llama3`.");
+        return;
+    }
+
+    // get all the paths
+    std::vector<std::string> relativePaths = library->getModels();
+
+	if (relativePaths.empty()) {
+		QMessageBox::information(this, "No Models", "No models found in the library.");
+		return;
+	}
+
+    ui.generateAllTagsButton->setEnabled(false);
+    ui.generateAllTagsButton->hide();
+
+    ui.pauseButton->show();
+    ui.cancelButton->show();
+
+    // debug print
+	qDebug() << "Generating tags for the following models:";
+	for (const std::string& rel : relativePaths) {
+		qDebug() << QString::fromStdString(rel);
+	}
+
+    ui.progressBar->setMaximum(static_cast<int>(relativePaths.size()));
+    ui.progressBar->setValue(0);
+    ui.statusLabel->setText("Generating tags...");
+    ui.generateAllTagsButton->setEnabled(false);
+
+    filesToTag.clear();
+    for (const auto& rel : relativePaths) {
+        filesToTag.push_back(library->fullPath + "/" + rel);
+    }
+
+    if (canceled || currentFileIndex <= 0) {
+        currentFileIndex = 0;
+    }
+
+    static bool connectedOnce = false;
+    if (!connectedOnce) {
+        connect(modelTagging, &ModelTagging::tagsGenerated,
+            this, &LibraryWindow::onTagsGeneratedFromBatch);
+        connectedOnce = true;
+    }
+
+    processNextFile();
 }
 
 void LibraryWindow::setMainWindow(MainWindow* mainWindow) {
@@ -308,6 +470,11 @@ void LibraryWindow::onExplorerModelDoubleClicked(const QModelIndex& index) {
 }
 
 void LibraryWindow::setupConnections() {
+
+    ui.pauseButton->hide();
+    ui.cancelButton->hide();
+    ui.resumeButton->hide();
+
     // Connect search input
     connect(ui.searchLineEdit, &QLineEdit::textChanged,
             this, &LibraryWindow::onSearchTextChanged);
@@ -334,6 +501,18 @@ void LibraryWindow::setupConnections() {
             this, &LibraryWindow::onExplorerModelClicked);
     connect(ui.explorerModelsView, &QListView::doubleClicked,
             this, &LibraryWindow::onExplorerModelDoubleClicked);
+
+	// Connect generate all tags button
+	connect(ui.generateAllTagsButton, &QPushButton::clicked,
+		this, &LibraryWindow::onGenerateAllTagsClicked);
+
+	// Connect pause/cancel/resume tag generation buttons
+    connect(ui.pauseButton, &QPushButton::clicked,
+        this, &LibraryWindow::onPauseTagGenerationClicked);
+    connect(ui.cancelButton, &QPushButton::clicked,
+        this, &LibraryWindow::onCancelTagGenerationClicked);
+    connect(ui.resumeButton, &QPushButton::clicked,
+        this, &LibraryWindow::onResumeTagGenerationClicked);
 }
 
 void LibraryWindow::onSearchTextChanged(const QString& text) {
