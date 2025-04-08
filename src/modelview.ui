@@ -70,55 +70,58 @@
     </rect>
    </property>
   </widget>
-  <widget class="QPushButton" name="generateTagsButton">
-   <property name="geometry">
-    <rect>
-     <x>410</x>
-     <y>560</y>
-     <width>81</width>
-     <height>24</height>
-    </rect>
-   </property>
-   <property name="text">
-    <string>Generate Tags</string>
-   </property>
-  </widget>
-  <widget class="QPushButton" name="cancelTagButton">
-   <property name="geometry">
-    <rect>
-     <x>421</x>
-     <y>560</y>
-     <width>111</width>
-     <height>24</height>
-    </rect>
-   </property>
-   <property name="visible">
-    <bool>false</bool>
-   </property>
-   <property name="text">
-    <string>Cancel Generation</string>
-   </property>
-  </widget>
-  <widget class="QLabel" name="tagStatusLabel">
-   <property name="geometry">
-    <rect>
-     <x>540</x>
-     <y>560</y>
-     <width>200</width>
-     <height>16</height>
-    </rect>
-   </property>
-   <property name="text">
-    <string/>
-   </property>
-  </widget>
+   <widget class="QPushButton" name="generateTagsButton">
+     <property name="geometry">
+       <rect>
+         <x>410</x>
+         <y>330</y>
+         <width>111</width>
+         <height>24</height>
+       </rect>
+     </property>
+     <property name="text">
+       <string>Generate Tags</string>
+     </property>
+   </widget>
+   <widget class="QPushButton" name="cancelTagButton">
+     <property name="geometry">
+       <rect>
+         <x>410</x>
+         <y>330</y>
+         <width>111</width>
+         <height>24</height>
+       </rect>
+     </property>
+     <property name="visible">
+       <bool>false</bool>
+     </property>
+     <property name="text">
+       <string>Cancel Generation</string>
+     </property>
+   </widget>
+   <widget class="QLabel" name="tagStatusLabel">
+     <property name="geometry">
+       <rect>
+         <x>340</x>
+         <y>600</y>
+         <width>331</width>
+         <height>16</height>
+       </rect>
+     </property>
+     <property name="text">
+       <string/>
+     </property>
+     <property name="alignment">
+       <set>Qt::AlignRight|Qt::AlignVCenter</set>
+     </property>
+   </widget>
   <widget class="QLabel" name="tags">
    <property name="geometry">
     <rect>
-     <x>466</x>
-     <y>332</y>
+     <x>420</x>
+     <y>300</y>
      <width>41</width>
-     <height>16</height>
+     <height>30</height>
     </rect>
    </property>
    <property name="font">
@@ -128,13 +131,13 @@
     </font>
    </property>
    <property name="text">
-    <string>Tags: </string>
+    <string>Tags</string>
    </property>
   </widget>
   <widget class="QLabel" name="label">
    <property name="geometry">
     <rect>
-     <x>20</x>
+     <x>36</x>
      <y>230</y>
      <width>121</width>
      <height>16</height>
@@ -147,17 +150,20 @@
   <widget class="QLineEdit" name="newTagLine">
    <property name="geometry">
     <rect>
-     <x>551</x>
+     <x>535</x>
      <y>330</y>
-     <width>113</width>
+     <width>100</width>
      <height>22</height>
     </rect>
    </property>
+    <property name="placeholderText">
+      <string>Enter new tag...</string>
+    </property>
   </widget>
   <widget class="QPushButton" name="addTagButton">
    <property name="geometry">
     <rect>
-     <x>520</x>
+     <x>640</x>
      <y>330</y>
      <width>21</width>
      <height>22</height>

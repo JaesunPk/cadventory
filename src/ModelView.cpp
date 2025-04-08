@@ -166,7 +166,7 @@ void ModelView::onCancelTagGenerationClicked() {
     CADventory* app = qobject_cast<CADventory*>(QCoreApplication::instance());
     ModelTagging* modelTagging = app->getModelTagging();
     modelTagging->cancelTagGeneration();  
-    ui.tagStatusLabel->setText("process canceled.");
+    ui.tagStatusLabel->setText("Process canceled.");
     ui.cancelTagButton->setVisible(false);
 	ui.generateTagsButton->setEnabled(true);
     ui.generateTagsButton->setVisible(true);
