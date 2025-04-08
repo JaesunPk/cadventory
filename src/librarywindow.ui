@@ -236,274 +236,6 @@
      <property name="value">
       <number>0</number>
      </property>
-     <widget class="QWidget" name="libraryTab">
-      <attribute name="title">
-       <string>Library View</string>
-      </attribute>
-      <layout class="QHBoxLayout" name="horizontalLayout">
-       <property name="leftMargin">
-        <number>0</number>
-       </property>
-       <property name="rightMargin">
-        <number>0</number>
-       </property>
-       <property name="bottomMargin">
-        <number>0</number>
-       </property>
-       <item>
-        <layout class="QVBoxLayout" name="selectedModelsLayout">
-         <item>
-          <layout class="QHBoxLayout" name="horizontalLayout_3">
-           <item>
-            <widget class="QPushButton" name="backButton">
-             <property name="text">
-              <string>back</string>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <widget class="QLabel" name="currentLibrary">
-             <property name="text">
-              <string>Library</string>
-             </property>
-            </widget>
-           </item>
-          </layout>
-         </item>
-         <item>
-          <layout class="QHBoxLayout" name="horizontalLayout_4"/>
-         </item>
-         <item>
-          <widget class="QLabel" name="label">
-           <property name="text">
-            <string>Selected Models</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QListView" name="selectedModelsView">
-           <property name="sizePolicy">
-            <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
-             <horstretch>0</horstretch>
-             <verstretch>1</verstretch>
-            </sizepolicy>
-           </property>
-           <property name="resizeMode">
-            <enum>QListView::ResizeMode::Adjust</enum>
-           </property>
-           <property name="spacing">
-            <number>15</number>
-           </property>
-           <property name="gridSize">
-            <size>
-             <width>220</width>
-             <height>140</height>
-            </size>
-           </property>
-           <property name="viewMode">
-            <enum>QListView::ViewMode::IconMode</enum>
-           </property>
-           <property name="uniformItemSizes">
-            <bool>true</bool>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QPushButton" name="generateReportButton">
-           <property name="text">
-            <string>Generate Report</string>
-           </property>
-          </widget>
-         </item>
-        </layout>
-       </item>
-       <item>
-        <layout class="QVBoxLayout" name="availableModelsLayout">
-          <item>
-            <layout class="QHBoxLayout" name="topRowLayout">
-              <item>
-                <widget class="QLabel" name="label_2">
-                  <property name="text">
-                    <string>Available Models</string>
-                  </property>
-                  <property name="textFormat">
-                    <enum>Qt::TextFormat::PlainText</enum>
-                  </property>
-                </widget>
-              </item>
-            </layout>
-          </item>
-         <item>
-          <layout class="QHBoxLayout" name="searchLayout">
-           <item>
-            <widget class="QComboBox" name="searchFieldComboBox">
-             <item>
-              <property name="text">
-               <string>Short Name</string>
-              </property>
-             </item>
-             <item>
-              <property name="text">
-               <string>Title</string>
-              </property>
-             </item>
-             <item>
-              <property name="text">
-               <string>Author</string>
-              </property>
-             </item>
-            </widget>
-           </item>
-           <item>
-            <widget class="QLineEdit" name="searchLineEdit">
-             <property name="placeholderText">
-              <string>Search...</string>
-             </property>
-            </widget>
-           </item>
-          </layout>
-         </item>
-         <item>
-          <widget class="QListView" name="availableModelsView">
-           <property name="sizePolicy">
-            <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
-             <horstretch>0</horstretch>
-             <verstretch>1</verstretch>
-            </sizepolicy>
-           </property>
-           <property name="resizeMode">
-            <enum>QListView::ResizeMode::Adjust</enum>
-           </property>
-           <property name="spacing">
-            <number>15</number>
-           </property>
-           <property name="gridSize">
-            <size>
-             <width>220</width>
-             <height>140</height>
-            </size>
-           </property>
-           <property name="viewMode">
-            <enum>QListView::ViewMode::IconMode</enum>
-           </property>
-           <property name="uniformItemSizes">
-            <bool>true</bool>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <layout class="QHBoxLayout" name="progressLayout">
-           <item>
-            <spacer name="horizontalSpacer">
-             <property name="orientation">
-              <enum>Qt::Orientation::Horizontal</enum>
-             </property>
-             <property name="sizeType">
-              <enum>QSizePolicy::Policy::Expanding</enum>
-             </property>
-             <property name="sizeHint" stdset="0">
-              <size>
-               <width>0</width>
-               <height>0</height>
-              </size>
-             </property>
-            </spacer>
-           </item>
-           <item>
-            <widget class="QLabel" name="statusLabel">
-             <property name="text">
-              <string>Processing:</string>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <widget class="QProgressBar" name="progressBar">
-             <property name="minimum">
-              <number>0</number>
-             </property>
-             <property name="maximum">
-              <number>100</number>
-             </property>
-             <property name="value">
-              <number>0</number>
-             </property>
-            </widget>
-           </item>
-            <item>
-              <widget class="QPushButton" name="generateAllTagsButton">
-                <property name="text">
-                  <string>Generate Tags for Library</string>
-                </property>
-                <property name="styleSheet">
-                  <string notr="true">
-                    padding: 4px 12px;
-                  </string>
-                </property>
-              </widget>
-            </item>
-            <item>
-              <widget class="QPushButton" name="pauseButton">
-                <property name="text">
-                  <string>Pause</string>
-                </property>
-                <property name="styleSheet">
-                  <string notr="true">
-                    padding: 4px 12px;
-                  </string>
-                </property>
-              </widget>
-            </item>
-            <item>
-              <widget class="QPushButton" name="resumeButton">
-                <property name="text">
-                  <string>Resume</string>
-                </property>
-              </widget>
-            </item>
-            <item>
-              <widget class="QPushButton" name="cancelButton">
-                <property name="text">
-                  <string>Cancel</string>
-                </property>
-                <property name="styleSheet">
-                  <string notr="true">
-                    padding: 4px 12px;
-                  </string>
-                </property>
-              </widget>
-            </item>
-          </layout>
-         </item>
-        </layout>
-       </item>
-      </layout>
-     </widget>
-     <widget class="QWidget" name="filesystemTab">
-      <attribute name="title">
-       <string>Filesystem View</string>
-      </attribute>
-      <layout class="QHBoxLayout" name="filesystemLayout">
-       <property name="leftMargin">
-        <number>0</number>
-       </property>
-       <property name="rightMargin">
-        <number>0</number>
-       </property>
-       <property name="bottomMargin">
-        <number>0</number>
-       </property>
-       <item>
-        <widget class="QTreeView" name="fileSystemTreeView">
-         <property name="sizePolicy">
-          <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
-           <horstretch>1</horstretch>
-           <verstretch>0</verstretch>
-          </sizepolicy>
-         </property>
-        </widget>
-       </item>
-      </layout>
-     </widget>
     </widget>
     <widget class="QLabel" name="statusLabel">
      <property name="geometry">
@@ -518,6 +250,73 @@
       <string>Processing:</string>
      </property>
     </widget>
+    <widget class="QPushButton" name="cancelButton">
+     <property name="geometry">
+      <rect>
+       <x>530</x>
+       <y>390</y>
+       <width>53</width>
+       <height>22</height>
+      </rect>
+     </property>
+     <property name="styleSheet">
+      <string notr="true">
+                    padding: 4px 12px;
+                  </string>
+     </property>
+     <property name="text">
+      <string>Cancel</string>
+     </property>
+    </widget>
+    <widget class="QPushButton" name="pauseButton">
+     <property name="geometry">
+      <rect>
+       <x>380</x>
+       <y>390</y>
+       <width>49</width>
+       <height>22</height>
+      </rect>
+     </property>
+     <property name="styleSheet">
+      <string notr="true">
+                    padding: 4px 12px;
+                  </string>
+     </property>
+     <property name="text">
+      <string>Pause</string>
+     </property>
+    </widget>
+    <widget class="QPushButton" name="generateAllTagsButton">
+     <property name="geometry">
+      <rect>
+       <x>204</x>
+       <y>390</y>
+       <width>171</width>
+       <height>22</height>
+      </rect>
+     </property>
+     <property name="styleSheet">
+      <string notr="true">
+                    padding: 4px 12px;
+                  </string>
+     </property>
+     <property name="text">
+      <string>Generate Tags for Library</string>
+     </property>
+    </widget>
+    <widget class="QPushButton" name="resumeButton">
+     <property name="geometry">
+      <rect>
+       <x>440</x>
+       <y>390</y>
+       <width>80</width>
+       <height>22</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>Resume</string>
+     </property>
+    </widget>
     <zorder>label_2</zorder>
     <zorder>searchLineEdit</zorder>
     <zorder>explorerLabel</zorder>
@@ -526,6 +325,11 @@
     <zorder>statusLabel</zorder>
     <zorder>searchFieldComboBox</zorder>
     <zorder>availableModelsView</zorder>
+    <zorder>cancelButton</zorder>
+    <zorder>pauseButton</zorder>
+    <zorder>horizontalSpacer</zorder>
+    <zorder>generateAllTagsButton</zorder>
+    <zorder>resumeButton</zorder>
    </widget>
    <widget class="QWidget" name="filesystemTab">
     <attribute name="title">
