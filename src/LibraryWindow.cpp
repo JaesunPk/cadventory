@@ -513,6 +513,10 @@ void LibraryWindow::setupConnections() {
         this, &LibraryWindow::onCancelTagGenerationClicked);
     connect(ui.resumeButton, &QPushButton::clicked,
         this, &LibraryWindow::onResumeTagGenerationClicked);
+
+    ui.searchFieldComboBox->clear();
+	ui.searchFieldComboBox->addItem("Short Name", Model::ShortNameRole);
+    ui.searchFieldComboBox->addItem("Tags", Model::TagsRole);
 }
 
 void LibraryWindow::onSearchTextChanged(const QString& text) {

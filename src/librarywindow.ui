@@ -70,12 +70,7 @@
      </item>
      <item>
       <property name="text">
-       <string>Title</string>
-      </property>
-     </item>
-     <item>
-      <property name="text">
-       <string>Author</string>
+       <string>Tags</string>
       </property>
      </item>
     </widget>

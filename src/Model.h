@@ -57,7 +57,8 @@ public:
         LibraryNameRole,
         IsSelectedRole,
         IsIncludedRole,
-        IsProcessedRole
+        IsProcessedRole,
+		TagsRole
     };
 
     explicit Model(const std::string& libraryPath, QObject* parent = nullptr);
