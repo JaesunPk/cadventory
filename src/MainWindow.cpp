@@ -271,8 +271,12 @@ size_t MainWindow::loadState()
         QString name = settings.value("name").toString();
         QString path = settings.value("path").toString();
 
-
-        addLibrary(name.toStdString().c_str(), path.toStdString().c_str());
+        if (QFileInfo::exists(path) && QFileInfo(path).isDir()) {
+            addLibrary(name.toStdString().c_str(), path.toStdString().c_str());
+        } else {
+            std::cerr << "Skipping library [" << name.toStdString() << "] as the path does not exist: " 
+                      << path.toStdString() << std::endl;
+        }
     }
     settings.endArray();
 
