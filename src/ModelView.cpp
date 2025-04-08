@@ -25,8 +25,13 @@ ModelView::ModelView(int modelId, Model* model, QWidget* parent)
   geometryBrowser = new GeometryBrowserDialog(modelId, model, this);
   geometryBrowser->setWindowFlags(Qt::Widget);
   ui.geometryLayout->addWidget(geometryBrowser);
-
-  ui.modelName->setText(QString::fromStdString(currModel.short_name));
+  //dont inclue extension in model name
+  std::string shortName = currModel.short_name;
+  size_t dotPos = shortName.find_last_of('.');
+  if (dotPos != std::string::npos) {
+    shortName = shortName.substr(0, dotPos);
+  }
+  ui.modelName->setText(QString::fromStdString(shortName));
 
   loadPreviewImage();
   populateProperties();

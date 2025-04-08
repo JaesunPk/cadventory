@@ -71,9 +71,6 @@ private:
     void processNextFile();
     void onTagsGeneratedFromBatch(const std::vector<std::string>& tags);
 
-    void processNextFile();
-    void onTagsGeneratedFromBatch(const std::vector<std::string>& tags);
-
     Library* library;
     MainWindow* mainWindow;
     QAction* reload;
