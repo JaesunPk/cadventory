@@ -12,7 +12,13 @@ testing, and code security testing.
 1) Install: CMake 3.25+, SQLite3, BRLCAD, and Qt6
 2) Clone/Install BRLCAD from https://github.com/BRL-CAD/brlcad.git
 3) Clone/Download CADventory from source
-4) Compile (see .gitlab-ci.yml for variations):
+4) **Install Ollama and LLaMA 3** (required for AI tagging):
+   - Download Ollama from: https://ollama.com
+   - Once installed, run the following command to install the model:
+     ```
+     ollama pull llama3
+     ```
+5) Compile (see .gitlab-ci.yml for variations):
      mkdir .build
      cd .build
      cmake .. -DCMAKE_INSTALL_PREFIX=/path -DCMAKE_BUILD_TYPE=Release -DQt6_DIR=/path/to/qt6 -DBRLCAD_ROOT=/path/to/BRLCAD
@@ -26,6 +32,8 @@ Run (Windows):
   .\Release\bin\cadventory.exe
 
 Click + in GUI and navigate to a folder to index.
+
+> ⚠️ AI-based tagging requires Ollama to be running and the `llama3` model to be available.
 
 To clear all settings, run with --no-gui command-line option.
 
