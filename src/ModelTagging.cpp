@@ -16,7 +16,7 @@ void logToFile(const std::string& message) {
     static std::mutex logMutex; 
     std::lock_guard<std::mutex> lock(logMutex);
 
-    std::ofstream logFile("log.txt", std::ios_base::app); 
+    std::ofstream logFile("ai_tagging_log.txt", std::ios_base::app); 
     if (logFile.is_open()) {
         std::time_t now = std::time(nullptr);
         char* dt = std::ctime(&now);
