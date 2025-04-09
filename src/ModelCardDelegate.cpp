@@ -64,11 +64,18 @@ void ModelCardDelegate::paint(QPainter* painter, const QStyleOptionViewItem& opt
     painter->drawText(textR.adjusted(0, 40, 0, 0), Qt::AlignLeft | Qt::AlignTop, author);
 
     // QIcon icon = QApplication::style()->standardIcon(QStyle::SP_DialogOpenButton);
-    QIcon icon(":/src/assets/file-sliders.svg");
+    
 
-    icon.paint(painter, iconR, Qt::AlignCenter, QIcon::Normal, QIcon::On);
+    /*icon.paint(painter, iconR, Qt::AlignCenter, QIcon::Normal, QIcon::On);
+    painter->restore();*/
+    QIcon magnifyIcon = QIcon::fromTheme("edit-find");
+    if (magnifyIcon.isNull()) {
+        // Fallback: use a standard Qt icon that is adaptive
+        magnifyIcon = QApplication::style()->standardIcon(QStyle::SP_FileDialogContentsView);
+    }
 
-    painter->restore();
+    // Draw the adaptive magnifying glass icon in the icon rectangle.
+    magnifyIcon.paint(painter, iconRect(option), Qt::AlignCenter, QIcon::Normal, QIcon::On);
 }
 
 QSize ModelCardDelegate::sizeHint(const QStyleOptionViewItem& option,
