@@ -160,6 +160,8 @@ void ModelView::onOkClicked() {
     QString tagText = tagLabel->text();
     model->addTagToModel(modelId, tagText.toStdString());
   }
+
+  emit tagsUpdated();
 }
 
 void ModelView::onCancelTagGenerationClicked() {
@@ -214,6 +216,9 @@ void ModelView::onGenerateTagsClicked() {
                 if (!alreadyExists) {
                     currModel.tags.push_back(tag.toStdString());
                     addTagItem(tag);
+
+					model->addTagToModel(modelId, tag.toStdString());
+                    model->refreshModelData();
                 }
             }
 

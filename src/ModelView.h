@@ -22,6 +22,9 @@ class ModelView : public QDialog {
   explicit ModelView(int modelId, Model* model, QWidget* parent = nullptr);
   ~ModelView();
 
+signals:
+	void tagsUpdated();
+
  private slots:
   void onAddTagClicked();
   void onRemoveTagClicked(QListWidgetItem* item);

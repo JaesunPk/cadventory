@@ -168,6 +168,9 @@ void LibraryWindow::onTagsGeneratedFromBatch(const std::vector<std::string>& tag
                 model->addTagToModel(modelId, tag);
             }
         }
+
+        model->refreshModelData();
+        availableModelsProxyModel->invalidate();
     }
 
     int progress = ui.progressBar->value() + 1;
@@ -655,6 +658,13 @@ void LibraryWindow::reloadLibrary() {
 void LibraryWindow::onModelViewClicked(int modelId) {
     qDebug() << "Model view clicked for model ID:" << modelId;
     ModelView* modelView = new ModelView(modelId, model, this);
+
+    connect(modelView, &ModelView::tagsUpdated, this, [this]() {
+        qDebug() << "Tags updated - refreshing proxy model";
+        model->refreshModelData(); 
+        availableModelsProxyModel->invalidate();
+        });
+
     modelView->exec();
 }
 
