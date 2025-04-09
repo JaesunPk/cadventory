@@ -118,7 +118,7 @@
   <widget class="QLabel" name="tags">
    <property name="geometry">
     <rect>
-     <x>420</x>
+     <x>415</x>
      <y>300</y>
      <width>41</width>
      <height>30</height>

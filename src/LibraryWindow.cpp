@@ -168,6 +168,9 @@ void LibraryWindow::onTagsGeneratedFromBatch(const std::vector<std::string>& tag
                 model->addTagToModel(modelId, tag);
             }
         }
+
+        model->refreshModelData();
+        availableModelsProxyModel->invalidate();
     }
 
     int progress = ui.progressBar->value() + 1;
@@ -513,6 +516,10 @@ void LibraryWindow::setupConnections() {
         this, &LibraryWindow::onCancelTagGenerationClicked);
     connect(ui.resumeButton, &QPushButton::clicked,
         this, &LibraryWindow::onResumeTagGenerationClicked);
+
+    ui.searchFieldComboBox->clear();
+	ui.searchFieldComboBox->addItem("Short Name", Model::ShortNameRole);
+    ui.searchFieldComboBox->addItem("Tags", Model::TagsRole);
 }
 
 void LibraryWindow::onSearchTextChanged(const QString& text) {
@@ -651,6 +658,13 @@ void LibraryWindow::reloadLibrary() {
 void LibraryWindow::onModelViewClicked(int modelId) {
     qDebug() << "Model view clicked for model ID:" << modelId;
     ModelView* modelView = new ModelView(modelId, model, this);
+
+    connect(modelView, &ModelView::tagsUpdated, this, [this]() {
+        qDebug() << "Tags updated - refreshing proxy model";
+        model->refreshModelData(); 
+        availableModelsProxyModel->invalidate();
+        });
+
     modelView->exec();
 }
 
