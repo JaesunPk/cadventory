@@ -331,6 +331,9 @@ void db_tree_list_comb_children(const union tree* tree, std::vector<std::string>
 }
 
 
+
+
+
 bool ProcessGFiles::generateThumbnail(ModelData& modelData, const std::string& selected_object_name)
 {
     qDebug() << "[ProcessGFiles::generateThumbnail] Started for model ID:" << modelData.id
@@ -345,7 +348,6 @@ bool ProcessGFiles::generateThumbnail(ModelData& modelData, const std::string& s
         return false;
     }
 
-    // Ensure the .g file path is present in modelData
     if (modelData.file_path.empty()) {
         qDebug() << "[ProcessGFiles::generateThumbnail] No file path available in modelData for generating thumbnail.";
         return false;
@@ -359,28 +361,37 @@ bool ProcessGFiles::generateThumbnail(ModelData& modelData, const std::string& s
     // Use the RT_EXECUTABLE_PATH from configuration
     QString rtExecutable = QStringLiteral(RT_EXECUTABLE_PATH);
 
-    // Construct the rt command (using the full file path so the external tool can find it)
-    QString rtCommand = rtExecutable + " -s512 -o \"" + pngFilePath + "\" \"" +
-        QString::fromStdString(modelData.file_path) + "\" " +
-        QString::fromStdString(selected_object_name);
+    // Build the arguments list for rt.exe
+    QStringList arguments;
+    arguments << "-s512"
+        << "-o" << pngFilePath
+        << QString::fromStdString(modelData.file_path)
+        << QString::fromStdString(selected_object_name);
 
-    qDebug() << "[ProcessGFiles::generateThumbnail] Running command:" << rtCommand;
+    qDebug() << "[ProcessGFiles::generateThumbnail] Running command:" << rtExecutable << arguments;
 
     QProcess process;
+    process.setProcessChannelMode(QProcess::MergedChannels);
+
+#ifdef Q_OS_WIN
+    // On Windows, execute the executable directly.
+    process.setProgram(rtExecutable);
+    process.setArguments(arguments);
+#else
+    // On Unix-like systems, if needed, you can execute via the shell.
+    QString rtCommand = rtExecutable + " " + arguments.join(" ");
     process.setProgram("/bin/sh");
     process.setArguments({ "-c", rtCommand });
-    process.setProcessChannelMode(QProcess::MergedChannels);
+#endif
 
     process.start();
     if (!process.waitForStarted()) {
-        qDebug() << "[ProcessGFiles::generateThumbnail] Failed to start the process for command:" << rtCommand;
+        qDebug() << "[ProcessGFiles::generateThumbnail] Failed to start the process for command:" << rtExecutable << arguments;
         return false;
     }
 
     bool finishedInTime = process.waitForFinished(timeLimitMs);
-
     if (!finishedInTime) {
-        // The process did not finish in the allotted time
         qDebug() << "[ProcessGFiles::generateThumbnail] Command timed out after" << timeLimitMs / 1000 << "seconds.";
         process.kill();
         process.waitForFinished();
@@ -394,18 +405,14 @@ bool ProcessGFiles::generateThumbnail(ModelData& modelData, const std::string& s
         return false;
     }
 
-    // Ensure the PNG was successfully created
     if (!QFile::exists(pngFilePath) || QFileInfo(pngFilePath).size() == 0) {
-        qDebug() << "[ProcessGFiles::generateThumbnail] Generated thumbnail file is empty or missing at path:"
-            << pngFilePath;
+        qDebug() << "[ProcessGFiles::generateThumbnail] Generated thumbnail file is empty or missing at path:" << pngFilePath;
         return false;
     }
 
-    // Read the generated thumbnail data
     QFile thumbnailFile(pngFilePath);
     if (!thumbnailFile.open(QIODevice::ReadOnly)) {
-        qDebug() << "[ProcessGFiles::generateThumbnail] Failed to open thumbnail file at:"
-            << pngFilePath;
+        qDebug() << "[ProcessGFiles::generateThumbnail] Failed to open thumbnail file at:" << pngFilePath;
         return false;
     }
 
@@ -417,10 +424,8 @@ bool ProcessGFiles::generateThumbnail(ModelData& modelData, const std::string& s
         return false;
     }
 
-    // Convert thumbnail data to std::vector<char>
     modelData.thumbnail.assign(thumbnailData.begin(), thumbnailData.end());
 
-    // Delete the PNG file after loading it
     if (!QFile::remove(pngFilePath)) {
         qDebug() << "[ProcessGFiles::generateThumbnail] Could not remove PNG file at" << pngFilePath;
     }
@@ -430,6 +435,20 @@ bool ProcessGFiles::generateThumbnail(ModelData& modelData, const std::string& s
 
     return true;
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 std::tuple<bool, std::string, std::string> ProcessGFiles::generateGistReport(const std::string& inputFilePath, const std::string& outputFilePath, const std::string& primary_obj, const std::string& label)
 {
