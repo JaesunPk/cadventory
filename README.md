@@ -171,7 +171,7 @@ Here's an architecture diagram:
 6) Multi-threading support for tag generation
 7) Refine accuracy of the AI Tagging
 
-### Credits
+## Credits
 - AI tagging logic: Written in-house using prompts run via Ollama
 - BRL-CAD Integration: Leveraging mged CLI from BRL-CAD
 - AI backend: Powered by LLaMA 3 via Ollama
