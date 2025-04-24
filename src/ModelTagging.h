@@ -29,6 +29,7 @@ public:
     void cancelTagGeneration();
     bool checkOllamaAvailability();
     bool checkModelAvailability(const std::string& modelName);
+    QString getOllamaPath() const { return m_ollamaPath; }
 signals:
     void tagsGenerated(const std::vector<std::string>& tags);
     void tagGenerationCanceled();
@@ -41,6 +42,11 @@ private:
 	bool m_generationCanceled = false;
     ModelParser parser;
     QProcess* tagProcess = nullptr;
+	QString m_ollamaPath; // path to the ollama executable
+    std::string m_promptText;
+    QString m_accumulatedOutput;
+
+    void handleProcessOutput();
 };
 
 #endif // MODELTAGGING_H
