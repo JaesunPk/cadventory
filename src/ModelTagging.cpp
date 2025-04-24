@@ -27,31 +27,85 @@ void logToFile(const std::string& message) {
 
 bool ModelTagging::checkOllamaAvailability() {
 #ifdef _WIN32
-    // Windows command using our blocking function (consider revising this later too)
-    std::string output = executeCommandNoWindow("cmd /C where ollama");
-    logToFile("checkOllamaAvailability: output = " + output);
-    int result = output.find("ollama") == std::string::npos;
-    logToFile("checkOllamaAvailability: result = " + std::to_string(result));
+    // First try to find ollama in our application directory
+    QString appDir = QCoreApplication::applicationDirPath();
+    QString ollamaLocalPath = appDir + "/ollama/ollama.exe";
 
+    QFileInfo fileInfo(ollamaLocalPath);
+    if (fileInfo.exists()) {
+        logToFile("Found bundled Ollama at: " + ollamaLocalPath.toStdString());
+        m_ollamaPath = ollamaLocalPath;
+        return true;
+    }
+
+    // Windows command using our blocking function as fallback
+    std::string output = executeCommandNoWindow("cmd /C where ollama");
+    logToFile("checkOllamaAvailability PATH check: output = " + output);
+
+    // If ollama is found in PATH
+    if (output.find("ollama") != std::string::npos) {
+        logToFile("Found Ollama in PATH");
+        m_ollamaPath = "ollama";
+        return true;
+    }
+
+    // Not found anywhere
+    return false;
 #else
+    // First check local path for Linux/Mac
+    QString appDir = QCoreApplication::applicationDirPath();
+    QString ollamaLocalPath = appDir + "/ollama/ollama";
+
+    QFileInfo fileInfo(ollamaLocalPath);
+    if (fileInfo.exists() && fileInfo.isExecutable()) {
+        logToFile("Found bundled Ollama at: " + ollamaLocalPath.toStdString());
+        m_ollamaPath = ollamaLocalPath;
+        return true;
+    }
+
+    // Check PATH as fallback
     int result = std::system("which ollama >/dev/null 2>&1");
-    logToFile("checkOllamaAvailability (Linux/mac): result = " + std::to_string(result));
+    logToFile("checkOllamaAvailability PATH check: result = " + std::to_string(result));
+
+    if (result == 0) {
+        m_ollamaPath = "ollama";
+        return true;
+    }
+
+    return false;
 #endif
-    return result == 0;
 }
  
 bool ModelTagging::checkModelAvailability(const std::string& modelName) {
 #ifdef _WIN32
-    std::string output = executeCommandNoWindow("cmd /C ollama list");
-    logToFile("checkModelAvailability: raw output = " + output);
-    bool found = output.find(modelName) != std::string::npos;
+    // Windows implementation using QProcess
+    QString command = m_ollamaPath;
+    QStringList args;
+    args << "list";
+
+    QProcess process;
+    process.start(command, args);
+    process.waitForFinished();
+    QString output = process.readAllStandardOutput();
+
+    logToFile("checkModelAvailability: raw output = " + output.toStdString());
+    bool found = output.contains(QString::fromStdString(modelName));
     logToFile("checkModelAvailability: model \"" + modelName + "\" found = " + std::to_string(found));
     return found;
 #else
-    std::string command = "ollama list | grep -q \"" + modelName + "\"";
-    int result = std::system(command.c_str());
-    logToFile("checkModelAvailability (Linux/mac): result = " + std::to_string(result));
-    return (result == 0);
+    // Linux/Mac implementation - use QProcess for consistency
+    QProcess process;
+    process.setProgram(m_ollamaPath);
+    process.setArguments(QStringList() << "list");
+
+    process.start();
+    process.waitForFinished();
+    QString output = process.readAllStandardOutput();
+
+    logToFile("checkModelAvailability (Linux/mac): raw output = " + output.toStdString());
+    bool found = output.contains(QString::fromStdString(modelName));
+    logToFile("checkModelAvailability (Linux/mac): model \"" + modelName + "\" found = " + std::to_string(found));
+    return found;
 #endif
 }
 
@@ -70,6 +124,7 @@ ModelTagging::~ModelTagging(){
 
 void ModelTagging::generateTags(const std::string& filepath) {
 	m_generationCanceled = false; // Reset the cancellation 
+    m_accumulatedOutput.clear();
 
     logToFile("generateTags() called with: " + filepath);
 
@@ -132,16 +187,8 @@ void ModelTagging::generateTags(const std::string& filepath) {
             Decorative
         )";
 
-        // Write the prompt to a temporary file.
-        std::ofstream promptFile("prompt.txt");
-        if (!promptFile.is_open()) {
-            logToFile("ERROR: Could not open prompt.txt for writing.");
-            std::cerr << "ERROR: Could not open prompt.txt for writing." << std::endl;
-            return false;
-        }
-        promptFile << prompt.str();
-        promptFile.close();
-        logToFile("Prompt written to prompt.txt");
+        m_promptText = prompt.str();
+        logToFile("Prompt created, length: " + std::to_string(m_promptText.length()));
 
         return true;
         };
@@ -173,12 +220,17 @@ void ModelTagging::generateTags(const std::string& filepath) {
         connect(tagProcess, QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished),
             this, &ModelTagging::onTagProcessFinished);
 
-        tagProcess->setProgram("ollama");
+        connect(tagProcess, &QProcess::readyReadStandardOutput, this, &ModelTagging::handleProcessOutput);
+
+        tagProcess->setProgram(m_ollamaPath);
         tagProcess->setArguments(QStringList() << "run" << "llama3");
-        tagProcess->setStandardInputFile("prompt.txt");
-        tagProcess->setStandardOutputFile("temp_tags.txt");
 
         tagProcess->start();
+
+        logToFile("Writing prompt to Ollama...");
+        QByteArray promptData = QByteArray::fromStdString(m_promptText);
+        tagProcess->write(promptData);
+        tagProcess->closeWriteChannel();
         logToFile("QProcess started with: ollama run llama3");
      });
 
@@ -201,6 +253,11 @@ void ModelTagging::cancelTagGeneration() {
     }
 }
 
+void ModelTagging::handleProcessOutput() {
+    QByteArray output = tagProcess->readAllStandardOutput();
+    m_accumulatedOutput += QString::fromUtf8(output);
+}
+
 void ModelTagging::onTagProcessFinished(int exitCode, QProcess::ExitStatus exitStatus) {
     qDebug() << "[ModelTagging] onTagProcessFinished: exitCode=" << exitCode
         << "exitStatus=" << exitStatus;
@@ -210,16 +267,8 @@ void ModelTagging::onTagProcessFinished(int exitCode, QProcess::ExitStatus exitS
     Q_UNUSED(exitStatus);
 
     std::vector<std::string> tags;
-    std::ifstream file("temp_tags.txt");
-	if (!file.is_open()) {
-        logToFile("ERROR: Failed to open temp_tags.txt");
-	}
-    std::string content((std::istreambuf_iterator<char>(file)),
-        std::istreambuf_iterator<char>());
-    file.close();
-    content = std::regex_replace(content, std::regex(R"(\*\*)"), "");
 
-    logToFile("Raw output from Ollama:\n" + content);
+    std::string content = m_accumulatedOutput.toStdString();
 
     std::regex tagPattern(R"((?:^|\n)([A-Za-z]+)(?:\n|$))");
     std::sregex_iterator it(content.begin(), content.end(), tagPattern);
@@ -248,16 +297,6 @@ void ModelTagging::onTagProcessFinished(int exitCode, QProcess::ExitStatus exitS
         }
     }
 
-    QFile promptFile("prompt.txt");
-    if (promptFile.exists()) {
-        promptFile.remove();
-    }
-
-    QFile tagsFile("temp_tags.txt");
-    if (tagsFile.exists()) {
-        tagsFile.remove();
-    }
-
     // Emit the signal with the generated tags.
     emit tagsGenerated(tags);
 
@@ -267,4 +306,6 @@ void ModelTagging::onTagProcessFinished(int exitCode, QProcess::ExitStatus exitS
 
     tagProcess->deleteLater();
     tagProcess = nullptr;
+
+    m_accumulatedOutput.clear();
 }

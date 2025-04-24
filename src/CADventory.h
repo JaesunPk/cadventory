@@ -20,6 +20,10 @@ public:
 
   void indexDirectory(const char *path);
 
+  void checkAndSetupModels();
+
+  bool startOllamaServer();
+
   ModelTagging* getModelTagging() { return modelTagging; }
 
 signals:
@@ -27,6 +31,7 @@ signals:
 
 private:
   ModelTagging* modelTagging;
+  QProcess* m_ollamaProcess = nullptr;
   void initMainWindow();
 
 public:
