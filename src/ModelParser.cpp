@@ -17,6 +17,12 @@ ModelParser::ModelParser() {
     // Constructor implementation (if needed)
 }
 
+/**
+* @brief Fetches object files from a BRL-CAD model file
+* 
+* @param path Path to the BRL-CAD model file
+* @return A vector of object file names
+*/
 std::vector<std::string> fetchObjectFiles(const std::string& path) {
     std::vector<std::string> objectFiles;
 

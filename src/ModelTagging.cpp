@@ -270,6 +270,7 @@ void ModelTagging::onTagProcessFinished(int exitCode, QProcess::ExitStatus exitS
 
     std::string content = m_accumulatedOutput.toStdString();
 
+	// use regex to extract tags
     std::regex tagPattern(R"((?:^|\n)([A-Za-z]+)(?:\n|$))");
     std::sregex_iterator it(content.begin(), content.end(), tagPattern);
     std::sregex_iterator end;
@@ -282,6 +283,8 @@ void ModelTagging::onTagProcessFinished(int exitCode, QProcess::ExitStatus exitS
         }
         ++it;
     }
+
+	// if regex didn't find enough tags, use fallback parsing which is less strict
     if (tags.size() < 10) {
         logToFile("Tag count less than 10. Fallback parsing used.");
         std::istringstream contentStream(content);
