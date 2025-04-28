@@ -68,21 +68,8 @@ jobs:
       if: matrix.os == 'windows-latest'
       run: |
         choco install 7zip -y
-        curl -L -o brlcad.exe https://sourceforge.net/projects/brlcad/files/BRL-CAD%20for%20Windows/7.32.0/BRL-CAD-7.32.0-win64.exe/download
-        mkdir brlcad
-        7z x brlcad.exe -obrLCAD
-        mv brLCAD/* brlcad/
-
-    - name: Install BRL-CAD (Ubuntu only)
-      if: matrix.os == 'ubuntu-latest'
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y brlcad
-
-    - name: Install BRL-CAD (macOS only)
-      if: matrix.os == 'macos-latest'
-      run: |
-        brew install brlcad
+        curl -L -o brlcad-installer.exe https://sourceforge.net/projects/brlcad/files/BRL-CAD%20for%20Windows/7.32.0/BRL-CAD-7.32.0-win64.exe/download
+        ./brlcad-installer.exe /S /D=${{ github.workspace }}\brlcad
 
     - name: Configure CMake
       # Configure CMake in a 'build' subdirectory. `CMAKE_BUILD_TYPE` is only required if you are using a single-configuration generator such as make.
