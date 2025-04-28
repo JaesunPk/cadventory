@@ -73,7 +73,6 @@ jobs:
         -DCMAKE_C_COMPILER=${{ matrix.c_compiler }}
         -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
         -DQt6_DIR="${{ env.Qt6_DIR }}"
-        -DBRLCAD_ROOT="${{ github.workspace }}/brlcad"
         -S ${{ github.workspace }}
 
     - name: Build
