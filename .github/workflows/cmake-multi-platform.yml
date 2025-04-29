@@ -67,9 +67,8 @@ jobs:
     - name: Install dependencies for BRL-CAD build (Windows only)
       if: runner.os == 'Windows'
       run: |
-        choco install cmake ninja git -y
-        RefreshEnv
-    
+        choco install cmake ninja git -y --no-progress
+
     - name: Clone BRL-CAD from GitHub
       if: runner.os == 'Windows'
       run: |
