@@ -64,11 +64,27 @@ jobs:
       with:
         version: '6.*'
 
-    - name: Install BRL-CAD (Windows only)
+    - name: Install dependencies for BRL-CAD build (Windows only)
       if: runner.os == 'Windows'
       run: |
-        curl -L -o brlcad-installer.exe https://sourceforge.net/projects/brlcad/files/BRL-CAD%207.32.0/BRL-CAD-7.32.0-windows-x86_64.exe/download
-        Start-Process -FilePath ".\brlcad-installer.exe" -ArgumentList "/S" -Wait
+        choco install cmake ninja git -y
+        RefreshEnv
+    
+    - name: Clone BRL-CAD from GitHub
+      if: runner.os == 'Windows'
+      run: |
+        git clone https://github.com/BRL-CAD/brlcad.git
+        cd brlcad
+        mkdir build
+        cd build
+        cmake .. -G "Ninja" -DCMAKE_BUILD_TYPE=Release
+        ninja
+    
+    - name: Set CMAKE_PREFIX_PATH for BRL-CAD build output (Windows only)
+      if: runner.os == 'Windows'
+      run: |
+        echo "CMAKE_PREFIX_PATH=D:/a/cadventory/cadventory/brlcad/build" >> $env:GITHUB_ENV
+
 
     - name: Configure CMake
       # Configure CMake in a 'build' subdirectory. `CMAKE_BUILD_TYPE` is only required if you are using a single-configuration generator such as make.
@@ -79,7 +95,6 @@ jobs:
         -DCMAKE_C_COMPILER=${{ matrix.c_compiler }}
         -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
         -DQt6_DIR="${{ env.Qt6_DIR }}"
-        -DBRLCAD_ROOT="C:/Program Files/BRL-CAD 7.32.0"
         -S ${{ github.workspace }}
 
     - name: Build
