@@ -76,10 +76,10 @@ jobs:
 
     - name: Set BRLCAD_ROOT and CMAKE_PREFIX_PATH (Windows only)
       if: runner.os == 'Windows'
-      shell: powershell
+      shell: bash
       run: |
-        echo "CMAKE_PREFIX_PATH=C:/Program Files/BRL-CAD 7.40.2" >> $env:GITHUB_ENV
-        echo "BRLCAD_ROOT=C:/Program Files/BRL-CAD 7.40.2" >> $env:GITHUB_ENV
+        echo 'CMAKE_PREFIX_PATH="C:/Program Files/BRL-CAD 7.40.2"' >> $GITHUB_ENV
+        echo 'BRLCAD_ROOT="C:/Program Files/BRL-CAD 7.40.2"' >> $GITHUB_ENV
     
     - name: Configure CMake
       # Configure CMake in a 'build' subdirectory. `CMAKE_BUILD_TYPE` is only required if you are using a single-configuration generator such as make.
